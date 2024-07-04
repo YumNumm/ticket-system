@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:ticket_api/models/verify_purchase_response.dart';
 import 'package:ticket_api/ticket_api.dart';
 import 'package:ticket_app/core/provider/ticket_api.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,6 +11,7 @@ part 'purchase_repository.g.dart';
 @Riverpod(keepAlive: true)
 PurchaseRepository purchaseRepository(PurchaseRepositoryRef ref) =>
     PurchaseRepository(
+      // ignore: avoid_manual_providers_as_generated_provider_dependency
       ticketApiClient: ref.watch(ticketApiProvider),
     );
 
@@ -36,7 +38,7 @@ class PurchaseRepository {
     throw Exception('Failed to launch the URL');
   }
 
-  Future<void> onPurchased({
+  Future<VerifyPurchaseResponse> onPurchased({
     required String sessionId,
     required String authorization,
   }) async {
@@ -45,6 +47,6 @@ class PurchaseRepository {
       authorization: authorization,
     );
     log('onPurchased: $response');
-    return;
+    return response.data;
   }
 }

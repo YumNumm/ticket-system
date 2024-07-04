@@ -6,7 +6,6 @@ import { Hono } from "hono";
 
 export const verify_purchase = new Hono<{ Bindings: Bindings }>();
 
-
 verify_purchase.post("/", async (c) => {
   const supabase = createClient(
     c.env.SUPABASE_URL,
@@ -40,9 +39,15 @@ verify_purchase.post("/", async (c) => {
     });
   }
   if (existingPurchase.data.length > 0) {
+    if (existingPurchase.data[0].session_id === c.req.query("session_id")) {
+      return createResponse({
+        success: true,
+        body: "Already purchased",
+      });
+    }
     return createResponse({
       success: false,
-      reason: "Already purchased",
+      reason: "Already purchased with different session_id",
     });
   }
 
@@ -100,13 +105,13 @@ verify_purchase.post("/", async (c) => {
 
 type OnPurchasedResponse = {
   success: true;
-  body: "Purchase recorded";
+  body: "Purchase recorded" | "Already purchased";
 } | {
   success: false;
   reason:
     | "Unauthorized"
     | "Missing session_id"
-    | "Already purchased"
+    | "Already purchased with different session_id"
     | "Error fetching existing purchase"
     | "Checkout session not found"
     | "Multiple checkout sessions found"

@@ -1,4 +1,6 @@
-# melos_managed_dependency_overrides: ticket_api
+# melos_managed_dependency_overrides: ticket_api,ticket_database
 dependency_overrides:
   ticket_api:
     path: ../packages/ticket_api
+  ticket_database:
+    path: ../packages/ticket_database

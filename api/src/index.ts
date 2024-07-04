@@ -9,9 +9,8 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use(
   "*",
   cors({
-    origin: "*",
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    maxAge: 10,
+    origin: ["*.ticket.yumnumm.dev", "ticket.yumnumm.dev", "localhost:62784"],
+    allowMethods: ["GET", "POST", "OPTIONS"],
   }),
 );
 

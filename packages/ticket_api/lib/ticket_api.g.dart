@@ -21,7 +21,7 @@ class _TicketApiClient implements TicketApiClient {
   String? baseUrl;
 
   @override
-  Future<HttpResponse<void>> verifyPurchase({
+  Future<HttpResponse<VerifyPurchaseResponse>> verifyPurchase({
     required String sessionId,
     required String authorization,
   }) async {
@@ -30,8 +30,8 @@ class _TicketApiClient implements TicketApiClient {
     final _headers = <String, dynamic>{r'Authorization': authorization};
     _headers.removeWhere((k, v) => v == null);
     const Map<String, dynamic>? _data = null;
-    final _result =
-        await _dio.fetch<void>(_setStreamType<HttpResponse<void>>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<HttpResponse<VerifyPurchaseResponse>>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
@@ -47,7 +47,8 @@ class _TicketApiClient implements TicketApiClient {
               _dio.options.baseUrl,
               baseUrl,
             ))));
-    final httpResponse = HttpResponse(null, _result);
+    final _value = VerifyPurchaseResponse.fromJson(_result.data!);
+    final httpResponse = HttpResponse(_value, _result);
     return httpResponse;
   }
 

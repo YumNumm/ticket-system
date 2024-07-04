@@ -6,8 +6,7 @@ import 'package:supabase_auth_ui/supabase_auth_ui.dart';
 import 'package:ticket_app/core/router/router.dart';
 import 'package:ticket_app/feature/auth/data/supabase_auth.dart';
 import 'package:ticket_app/feature/auth/ui/login_page.dart';
-import 'package:ticket_app/feature/purchase/ui/component/buy_ticket_card.dart';
-import 'package:ticket_app/feature/purchase/ui/on_purchased_page.dart';
+import 'package:ticket_app/feature/ticket/ui/ticket_view.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -54,11 +53,6 @@ class _Drawer extends ConsumerWidget {
               const LoginRoute().go(context);
             },
           ),
-          ListTile(
-            title: const Text('ON_PURHCASED'),
-            onTap: () async =>
-                const OnPurchasedRoute(sessionId: '').push<void>(context),
-          ),
         ],
       ),
     );
@@ -77,7 +71,7 @@ class _Body extends StatelessWidget {
         width: isLargeScreen ? 600 : null,
         child: ListView(
           children: const [
-            BuyTicketCard(),
+            TicketView(),
           ],
         ),
       ),
