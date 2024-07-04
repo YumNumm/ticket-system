@@ -1,0 +1,7 @@
+include: package:yumemi_lints/flutter/3.22/recommended.yaml
+
+analyzer:
+  errors:
+    diagnostic_describe_all_properties: ignore
+  plugins:
+    - custom_lint
