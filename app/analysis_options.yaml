@@ -1,1 +1,5 @@
-include: package:flutter_lints/flutter.yaml
+include: package:yumemi_lints/flutter/3.22/recommended.yaml
+
+analyzer:
+  plugins:
+    - custom_lint
