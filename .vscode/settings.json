@@ -6,5 +6,6 @@
   "deno.unstable": true,
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
-  }
+  },
+  "dart.flutterSdkPath": ".fvm/versions/3.22.2"
 }
