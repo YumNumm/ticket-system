@@ -21,12 +21,15 @@ GoRouter router(RouterRef ref) {
       final isLoggedIn = ref.read(currentUserProvider) != null;
       log('${state.matchedLocation}: $isLoggedIn');
       if (!isLoggedIn && state.matchedLocation != const LoginRoute().location) {
+        log('redirect to login: 未ログインです');
         return const LoginRoute().location;
       }
       // ログイン済みでログインページを開こうとした場合は、ホームページへリダイレクト
       if (isLoggedIn && state.matchedLocation == const LoginRoute().location) {
+        log('redirect to home: ログイン済みです');
         return const HomeRoute().location;
       }
+      log('redirectを行いません');
       return null;
     },
     initialLocation: ref.read(currentUserProvider) == null
@@ -40,9 +43,16 @@ GoRouter router(RouterRef ref) {
 
 @TypedGoRoute<HomeRoute>(
   path: '/',
+  name: 'home',
   routes: [
-    TypedGoRoute<LoginRoute>(path: 'login'),
-    TypedGoRoute<OnPurchasedRoute>(path: 'on_purchased'),
+    TypedGoRoute<LoginRoute>(
+      path: 'login',
+      name: 'login',
+    ),
+    TypedGoRoute<OnPurchasedRoute>(
+      path: 'on_purchased',
+      name: 'on_purchased',
+    ),
   ],
 )
 class HomeRoute extends GoRouteData {

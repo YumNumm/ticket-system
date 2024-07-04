@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -42,6 +44,7 @@ class PurchaseRepository {
       },
     );
     final data = response.data as Map<String, dynamic>;
+    log('onPurchased: $data ${response.status}', name: 'PurchaseRepository');
     if (response.status != 200) {
       throw Exception('Failed to check the purchase status: $data');
     }

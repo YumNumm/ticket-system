@@ -1,9 +1,14 @@
-import "https://esm.sh/v135/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts";
-import { getUser } from "../_utils/user.ts";
-import { supabaseAdmin, supabaseStripe } from "../_utils/supabase.ts";
+import { createClient } from "@supabase/supabase-js";
+import app from "..";
+import { getUser } from "../utils/user";
 
-Deno.serve(async (req) => {
-  const authorizationHeader = req.headers.get("authorization");
+app.post("/verify_purchase", async (c) => {
+  const supabase = createClient(
+    c.env.SUPABASE_URL,
+    c.env.SUPABASE_KEY,
+  );
+
+  const authorizationHeader = c.req.header("authorization");
   const unauthorizedResponse = createResponse({
     success: false,
     reason: "Unauthorized",
@@ -12,13 +17,13 @@ Deno.serve(async (req) => {
   if (!authorizationHeader) {
     return unauthorizedResponse;
   }
-  const user = await getUser(authorizationHeader);
+  const user = await getUser(authorizationHeader, supabase);
   if (!user) {
     return unauthorizedResponse;
   }
   console.log("User:", user);
   // 既に購入済みかどうかをチェック
-  const existingPurchase = await supabaseAdmin.from("purchases").select().eq(
+  const existingPurchase = await supabase.from("purchases").select().eq(
     "user_id",
     user.id,
   );
@@ -36,8 +41,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  const requestedUri = new URL(req.url);
-  const stripeSessionId = requestedUri.searchParams.get("session_id");
+  const stripeSessionId = c.req.query("session_id");
   if (!stripeSessionId) {
     return createResponse({
       success: false,
@@ -46,10 +50,11 @@ Deno.serve(async (req) => {
   }
 
   // Stripeのセッションを取得
-  const result = await supabaseStripe.from("checkout_sessions").select().eq(
-    "id",
-    stripeSessionId,
-  );
+  const result = await supabase.schema("stripe").from("checkout_sessions")
+    .select().eq(
+      "id",
+      stripeSessionId,
+    );
   if (result.error) {
     console.error(result.error);
     return Response.json({
@@ -70,7 +75,7 @@ Deno.serve(async (req) => {
     });
   }
   const session = result.data[0];
-  const insertResult = await supabaseAdmin.from("purchases").insert({
+  const insertResult = await supabase.from("purchases").insert({
     user_id: user.id,
     session_id: session.id,
   });

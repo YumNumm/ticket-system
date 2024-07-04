@@ -1,0 +1,8 @@
+name = "ticket-system-api"
+compatibility_date = "2023-12-01"
+
+account_id = "4270d8a14dfc1f866629099a788c93e2"
+main = "src/index.ts"
+compatibility_flags = ["nodejs_compat"]
+placement = { mode = "smart" }
+workers_dev = false
