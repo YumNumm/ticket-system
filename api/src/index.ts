@@ -9,7 +9,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use(
   "*",
   cors({
-    origin: ["*.ticket.yumnumm.dev", "ticket.yumnumm.dev", "localhost:62784"],
+    origin: "*",
     allowMethods: ["GET", "POST", "OPTIONS"],
   }),
 );
