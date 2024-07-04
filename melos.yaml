@@ -1,0 +1,40 @@
+name: ticket_system_workspace
+sdkPath: .fvm/flutter_sdk
+
+packages:
+  - app/
+  - packages/*
+
+command:
+  bootstrap:
+    environment:
+      sdk: ^3.4.3
+      flutter: ^3.22.2
+
+scripts:
+  report_test:
+    exec: flutter test --no-pub --machine > test_report.log
+    packageFilters:
+      dependsOn: test
+
+  format:
+    exec: bash "$MELOS_ROOT_PATH/scripts/format.sh"
+
+  check_format:ci:
+    exec: bash "$MELOS_ROOT_PATH/scripts/check-format-ci.sh"
+
+  report_custom_lint:ci:
+    exec: bash "$MELOS_ROOT_PATH/scripts/report-custom-lint-ci.sh"
+    packageFilters:
+      dependsOn: custom_lint
+
+  regenerate_code:
+    run: dart run build_runner build -d
+    exec:
+      orderDependents: true
+    packageFilters:
+      dependsOn: build_runner
+
+ide:
+  intellij:
+    enabled: false

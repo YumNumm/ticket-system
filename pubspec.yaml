@@ -1,0 +1,9 @@
+name: ticket_system
+version: 1.0.0
+publish_to: "none"
+
+environment:
+  sdk: ^3.4.0
+
+dependencies:
+  melos: ^6.1.0
