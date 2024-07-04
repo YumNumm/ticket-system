@@ -8,6 +8,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ticket_app/feature/auth/data/supabase_auth.dart';
 import 'package:ticket_app/feature/auth/ui/login_page.dart';
 import 'package:ticket_app/feature/home/ui/home_page.dart';
+import 'package:ticket_app/feature/purchase/ui/on_purchased_page.dart';
 
 part 'router.g.dart';
 
@@ -41,6 +42,7 @@ GoRouter router(RouterRef ref) {
   path: '/',
   routes: [
     TypedGoRoute<LoginRoute>(path: 'login'),
+    TypedGoRoute<OnPurchasedRoute>(path: 'on_purchased'),
   ],
 )
 class HomeRoute extends GoRouteData {

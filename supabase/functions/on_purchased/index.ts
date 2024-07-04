@@ -1,4 +1,4 @@
-import "https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts";
+import "https://esm.sh/v135/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts";
 import { getUser } from "../_utils/user.ts";
 import { supabaseAdmin, supabaseStripe } from "../_utils/supabase.ts";
 
@@ -16,6 +16,26 @@ Deno.serve(async (req) => {
   if (!user) {
     return unauthorizedResponse;
   }
+  console.log("User:", user);
+  // 既に購入済みかどうかをチェック
+  const existingPurchase = await supabaseAdmin.from("purchases").select().eq(
+    "user_id",
+    user.id,
+  );
+  if (existingPurchase.error) {
+    console.error(existingPurchase.error);
+    return createResponse({
+      success: false,
+      reason: "Error fetching existing purchase",
+    });
+  }
+  if (existingPurchase.data.length > 0) {
+    return createResponse({
+      success: false,
+      reason: "Already purchased",
+    });
+  }
+
   const requestedUri = new URL(req.url);
   const stripeSessionId = requestedUri.searchParams.get("session_id");
   if (!stripeSessionId) {
@@ -76,12 +96,15 @@ type OnPurchasedResponse = {
   reason:
     | "Unauthorized"
     | "Missing session_id"
+    | "Already purchased"
+    | "Error fetching existing purchase"
     | "Checkout session not found"
     | "Multiple checkout sessions found"
     | "Error inserting purchase";
 };
 
 function createResponse(response: OnPurchasedResponse): Response {
+  console.log(response);
   return Response.json(response, {
     status: response.success ? 200 : 400,
   });

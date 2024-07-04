@@ -6,7 +6,7 @@ import 'package:supabase_auth_ui/supabase_auth_ui.dart';
 import 'package:ticket_app/core/router/router.dart';
 import 'package:ticket_app/feature/auth/data/supabase_auth.dart';
 import 'package:ticket_app/feature/auth/ui/login_page.dart';
-import 'package:ticket_app/feature/purchase/ui/buy_ticket_card.dart';
+import 'package:ticket_app/feature/purchase/ui/component/buy_ticket_card.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
