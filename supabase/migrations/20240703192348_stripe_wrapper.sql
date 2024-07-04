@@ -20,7 +20,7 @@ create server stripe_server
     api_url 'https://api.stripe.com/v1/',  -- Stripe API base URL, optional. Default is 'https://api.stripe.com/v1/'
     api_version '2024-06-20'  -- Stripe API version, optional. Default is your Stripe account’s default API version.
   );
-  
+
 create foreign table stripe.checkout_sessions (
   id text,
   customer text,
@@ -33,5 +33,14 @@ create foreign table stripe.checkout_sessions (
     object 'checkout/sessions',
     rowid_column 'id'
   );
+
+GRANT USAGE ON SCHEMA stripe TO service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA stripe TO service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA stripe TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA stripe TO service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA stripe GRANT ALL ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA stripe GRANT ALL ON ROUTINES TO service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA stripe GRANT ALL ON SEQUENCES TO service_role;
+
 
 */
