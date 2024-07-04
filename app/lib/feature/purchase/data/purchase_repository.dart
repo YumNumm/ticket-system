@@ -26,10 +26,12 @@ class PurchaseRepository {
     required String uid,
     String? promoCode,
   }) async {
-    final url = 'https://buy.stripe.com/4gwdRUgyc9kr0DedQR?'
+    var url = 'https://buy.stripe.com/4gwdRUgyc9kr0DedQR?'
         'prefilled_email=${Uri.encodeComponent(email)}'
-        '&client_reference_id=$uid'
-        '&prefilled_promo_code=DAEJX5PV';
+        '&client_reference_id=$uid';
+    if (promoCode != null) {
+      url += '&prefilled_promo_code=$promoCode';
+    }
 
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
