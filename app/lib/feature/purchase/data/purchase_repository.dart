@@ -1,7 +1,8 @@
 import 'dart:developer';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ticket_api/ticket_api.dart';
+import 'package:ticket_app/core/provider/ticket_api.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 part 'purchase_repository.g.dart';
@@ -9,20 +10,21 @@ part 'purchase_repository.g.dart';
 @Riverpod(keepAlive: true)
 PurchaseRepository purchaseRepository(PurchaseRepositoryRef ref) =>
     PurchaseRepository(
-      supabase: Supabase.instance.client,
+      ticketApiClient: ref.watch(ticketApiProvider),
     );
 
 class PurchaseRepository {
-  PurchaseRepository({required SupabaseClient supabase}) : _supabase = supabase;
+  PurchaseRepository({
+    required TicketApiClient ticketApiClient,
+  }) : _ticketApiClient = ticketApiClient;
 
-  final SupabaseClient _supabase;
-
+  final TicketApiClient _ticketApiClient;
   Future<bool> transitToPurchasePage({
     required String email,
     required String uid,
     String? promoCode,
   }) async {
-    final url = 'https://buy.stripe.com/00gdRU6XC54b2Lm6oo?'
+    final url = 'https://buy.stripe.com/4gwdRUgyc9kr0DedQR?'
         'prefilled_email=${Uri.encodeComponent(email)}'
         '&client_reference_id=$uid'
         '&prefilled_promo_code=DAEJX5PV';
@@ -36,18 +38,13 @@ class PurchaseRepository {
 
   Future<void> onPurchased({
     required String sessionId,
+    required String authorization,
   }) async {
-    final response = await _supabase.functions.invoke(
-      'on_purchased',
-      queryParameters: {
-        'session_id': sessionId,
-      },
+    final response = await _ticketApiClient.verifyPurchase(
+      sessionId: sessionId,
+      authorization: authorization,
     );
-    final data = response.data as Map<String, dynamic>;
-    log('onPurchased: $data ${response.status}', name: 'PurchaseRepository');
-    if (response.status != 200) {
-      throw Exception('Failed to check the purchase status: $data');
-    }
+    log('onPurchased: $response');
     return;
   }
 }

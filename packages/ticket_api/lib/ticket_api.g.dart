@@ -10,8 +10,8 @@ part of 'ticket_api.dart';
 
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element
 
-class _TicketApiApiClient implements TicketApiApiClient {
-  _TicketApiApiClient(
+class _TicketApiClient implements TicketApiClient {
+  _TicketApiClient(
     this._dio, {
     this.baseUrl,
   });
@@ -21,7 +21,7 @@ class _TicketApiApiClient implements TicketApiApiClient {
   String? baseUrl;
 
   @override
-  Future<Map<String, dynamic>> verifyPurchase({
+  Future<HttpResponse<void>> verifyPurchase({
     required String sessionId,
     required String authorization,
   }) async {
@@ -30,9 +30,9 @@ class _TicketApiApiClient implements TicketApiApiClient {
     final _headers = <String, dynamic>{r'Authorization': authorization};
     _headers.removeWhere((k, v) => v == null);
     const Map<String, dynamic>? _data = null;
-    final _result = await _dio.fetch<Map<String, dynamic>>(
-        _setStreamType<Map<String, dynamic>>(Options(
-      method: 'GET',
+    final _result =
+        await _dio.fetch<void>(_setStreamType<HttpResponse<void>>(Options(
+      method: 'POST',
       headers: _headers,
       extra: _extra,
     )
@@ -47,9 +47,8 @@ class _TicketApiApiClient implements TicketApiApiClient {
               _dio.options.baseUrl,
               baseUrl,
             ))));
-    var _value = _result.data!.map((k, dynamic v) =>
-        MapEntry(k, dynamic.fromJson(v as Map<String, dynamic>)));
-    return _value;
+    final httpResponse = HttpResponse(null, _result);
+    return httpResponse;
   }
 
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {

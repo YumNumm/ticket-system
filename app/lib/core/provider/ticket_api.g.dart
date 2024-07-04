@@ -2,25 +2,25 @@
 
 // ignore_for_file: type=lint, duplicate_ignore
 
-part of 'supabase.dart';
+part of 'ticket_api.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$supabaseHash() => r'd9b32c9873320e193a49b33804e0e75d6b04b89e';
+String _$ticketApiHash() => r'6e8705983c8fce61c0ead1a0a396a434313c2986';
 
-/// See also [supabase].
-@ProviderFor(supabase)
-final supabaseProvider = Provider<SupabaseClient>.internal(
-  supabase,
-  name: r'supabaseProvider',
+/// See also [ticketApi].
+@ProviderFor(ticketApi)
+final ticketApiProvider = Provider<TicketApiClient>.internal(
+  ticketApi,
+  name: r'ticketApiProvider',
   debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$supabaseHash,
+      const bool.fromEnvironment('dart.vm.product') ? null : _$ticketApiHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef SupabaseRef = ProviderRef<SupabaseClient>;
+typedef TicketApiRef = ProviderRef<TicketApiClient>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

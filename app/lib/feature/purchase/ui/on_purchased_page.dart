@@ -56,7 +56,11 @@ class _OnPurchaseHandlerView extends HookConsumerWidget {
     final repository = ref.watch(purchaseRepositoryProvider);
     // ignore: discarded_futures
     final onPurchasedFuture = useMemoized(
-      () async => repository.onPurchased(sessionId: sessionId),
+      () async => repository.onPurchased(
+        sessionId: sessionId,
+        authorization:
+            Supabase.instance.client.auth.currentSession!.accessToken,
+      ),
     );
     final onPurchasedSnapshot = useFuture(onPurchasedFuture);
 

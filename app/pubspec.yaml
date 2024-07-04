@@ -7,6 +7,7 @@ environment:
   flutter: ^3.22.2
 
 dependencies:
+  dio: ^5.5.0+1
   envied: ^0.5.4+1
   flutter:
     sdk: flutter

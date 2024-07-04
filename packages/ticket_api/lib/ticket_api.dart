@@ -4,12 +4,12 @@ import 'package:retrofit/retrofit.dart';
 part 'ticket_api.g.dart';
 
 @RestApi()
-abstract class TicketApiApiClient {
-  factory TicketApiApiClient(Dio dio, {String baseUrl}) = _TicketApiApiClient;
+abstract class TicketApiClient {
+  factory TicketApiClient(Dio dio, {String baseUrl}) = _TicketApiClient;
 
   // MEMO(YumNumm): めんどくさいので とりあえずMapで返す
-  @GET('/verify_purchase')
-  Future<Map<String,dynamic>> verifyPurchase({
+  @POST('/verify_purchase')
+  Future<HttpResponse<void>> verifyPurchase({
     @Query('session_id') required String sessionId,
     @Header('Authorization') required String authorization,
   });

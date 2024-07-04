@@ -1,8 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import app from "..";
 import { getUser } from "../utils/user";
+import { Bindings } from "../global";
+import { Hono } from "hono";
 
-app.post("/verify_purchase", async (c) => {
+export const verify_purchase = new Hono<{ Bindings: Bindings }>();
+
+
+verify_purchase.post("/", async (c) => {
   const supabase = createClient(
     c.env.SUPABASE_URL,
     c.env.SUPABASE_KEY,

@@ -14,4 +14,6 @@ abstract class Env {
   static final String supabaseUrl = _Env.supabaseUrl;
   @EnviedField()
   static final String supabaseAnonKey = _Env.supabaseAnonKey;
+  @EnviedField()
+  static final String apiBaseUrl = _Env.apiBaseUrl;
 }
