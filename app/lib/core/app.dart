@@ -12,6 +12,7 @@ class App extends ConsumerWidget {
       theme: ThemeData.light(
         useMaterial3: true,
       ),
+      title: "Ticket System",
       darkTheme: ThemeData.dark(
         useMaterial3: true,
       ),
