@@ -14,6 +14,7 @@ import 'package:ticket_app/feature/purchase/ui/component/buy_ticket_card.dart';
 import 'package:ticket_app/feature/ticket/data/ticket_notifier.dart';
 import 'package:ticket_database/models/profiles.dart';
 import 'package:ticket_database/models/purchases.dart';
+import 'package:url_launcher/link.dart';
 
 class TicketView extends ConsumerWidget {
   const TicketView({super.key});
@@ -266,6 +267,17 @@ class _TicketCard extends StatelessWidget {
                   const EditProfileRoute().push<void>(context),
             ),
           ],
+        ),
+        const SizedBox(height: 16),
+        Link(
+          uri: Uri.parse(
+            '${Env.apiBaseUrl}/ticket/apple?ticket_id=${purchase.sessionId}&user_id=${profile.id}',
+          ),
+          builder: (context, followLink) => FilledButton.tonalIcon(
+            label: const Text('Apple Walletに追加する'),
+            icon: const Icon(Icons.wallet_giftcard),
+            onPressed: () async => followLink?.call(),
+          ),
         ),
       ],
     );
