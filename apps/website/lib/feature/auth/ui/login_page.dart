@@ -58,6 +58,32 @@ class LoginPage extends ConsumerWidget {
                     },
                   ),
                 ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: FilledButton.icon(
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.all(Colors.black),
+                      foregroundColor: WidgetStateProperty.all(Colors.white),
+                      padding: WidgetStateProperty.all(
+                        const EdgeInsets.all(16),
+                      ),
+                    ),
+                    label: const Text('Slackでログイン'),
+                    icon: const Icon(Icons.login),
+                    onPressed: () async {
+                      final auth = Supabase.instance.client.auth;
+                      final response = await auth.signInWithOAuth(
+                        OAuthProvider.slack,
+                        redirectTo: kIsWeb
+                            ? null
+                            : 'net.yumnumm.ticketApp://login-callback/',
+                        authScreenLaunchMode: LaunchMode.externalApplication,
+                      );
+                      log('response: $response');
+                      ref.read(routerProvider).refresh();
+                    },
+                  ),
+                ),
               ],
             ),
           ),
