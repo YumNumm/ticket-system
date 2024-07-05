@@ -18,6 +18,7 @@ dependencies:
   go_router: ^14.2.0
   google_fonts: ^6.2.1
   hooks_riverpod: ^3.0.0-dev.3
+  qr_flutter: ^4.1.0
   riverpod_annotation: ^3.0.0-dev.3
   supabase_auth_ui: ^0.5.0
   supabase_flutter: ^2.5.7

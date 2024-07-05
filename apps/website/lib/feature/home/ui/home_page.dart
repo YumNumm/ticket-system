@@ -17,7 +17,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home Page'),
+        title: const Text('Ticket System'),
       ),
       drawer: const _Drawer(),
       body: const _Body(),
@@ -30,7 +30,6 @@ class _Drawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final currentUser = ref.watch(currentUserProvider);
     final profile = ref.watch(profileNotifierProvider);
 

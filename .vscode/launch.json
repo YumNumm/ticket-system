@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "Website (debug)",
-      "cwd": "apps/app",
+      "cwd": "apps/website",
       "request": "launch",
       "program": "lib/main.dart",
       "type": "dart",

@@ -5,6 +5,7 @@ import 'package:file_picker/_internal/file_picker_web.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:ticket_app/core/env/env.dart';
 import 'package:ticket_app/core/router/router.dart';
@@ -227,17 +228,12 @@ class _TicketCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            const SizedBox(width: 16),
-            Icon(Icons.check, color: colorScheme.primary, size: 24),
-            const SizedBox(width: 16),
-            Flexible(
-              child: Text(
-                'チケット購入済み',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
-                ),
-              ),
+            const Spacer(),
+            FilledButton.tonalIcon(
+              label: const Text('プロフィールを編集する'),
+              icon: const Icon(Icons.edit),
+              onPressed: () async =>
+                  const EditProfileRoute().push<void>(context),
             ),
           ],
         ),
@@ -257,26 +253,23 @@ class _TicketCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            const Spacer(),
-            FilledButton.tonalIcon(
-              label: const Text('プロフィールを編集する'),
-              icon: const Icon(Icons.edit),
-              onPressed: () async =>
-                  const EditProfileRoute().push<void>(context),
-            ),
-          ],
+        QrImageView(
+          data: profile.id,
+          size: 160,
+          backgroundColor: Colors.white,
+          dataModuleStyle: const QrDataModuleStyle(
+            color: Colors.black,
+          ),
         ),
         const SizedBox(height: 16),
         Link(
           uri: Uri.parse(
             '${Env.apiBaseUrl}/ticket/apple?ticket_id=${purchase.sessionId}&user_id=${profile.id}',
           ),
-          builder: (context, followLink) => FilledButton.tonalIcon(
+          builder: (context, followLink) => FloatingActionButton.extended(
             label: const Text('Apple Walletに追加する'),
-            icon: const Icon(Icons.wallet_giftcard),
-            onPressed: () async => followLink?.call(),
+            onPressed: followLink,
+            icon: const Icon(Icons.apple),
           ),
         ),
       ],
