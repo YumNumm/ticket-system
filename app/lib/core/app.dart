@@ -13,14 +13,14 @@ class App extends ConsumerWidget {
         useMaterial3: true,
       ).copyWith(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blueAccent,
+          seedColor: Colors.blue,
         ),
       ),
       darkTheme: ThemeData.dark(
         useMaterial3: true,
       ).copyWith(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blueAccent,
+          seedColor: Colors.blue,
           brightness: Brightness.dark,
         ),
       ),

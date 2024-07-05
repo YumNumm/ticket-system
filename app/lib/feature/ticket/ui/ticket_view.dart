@@ -215,7 +215,7 @@ class _TicketCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              _AvatarView(profile: profile),
+              AvatarView(profile: profile),
             ],
           ),
         ),
@@ -272,9 +272,10 @@ class _TicketCard extends StatelessWidget {
   }
 }
 
-class _AvatarView extends HookConsumerWidget {
-  const _AvatarView({
+class AvatarView extends HookConsumerWidget {
+  const AvatarView({
     required this.profile,
+    super.key,
   });
 
   final Profiles profile;

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:ticket_app/core/components/adaptive_sized_box.dart';
 import 'package:ticket_app/core/router/router.dart';
 import 'package:ticket_app/feature/profile/data/profile_notifier.dart';
 import 'package:ticket_database/models/profiles.dart';
@@ -28,29 +29,31 @@ class EditProfilePage extends HookConsumerWidget {
       appBar: AppBar(
         title: const Text('Edit Profile'),
       ),
-      body: switch (state) {
-        AsyncLoading() => const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 8),
-                Text('Loading...'),
-              ],
+      body: AdaptiveSizedBox(
+        child: switch (state) {
+          AsyncLoading() => const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 8),
+                  Text('Loading...'),
+                ],
+              ),
             ),
-          ),
-        AsyncError(:final error) => Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.error, color: Colors.red),
-                const SizedBox(height: 8),
-                Text('Error: $error'),
-              ],
+          AsyncError(:final error) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error, color: Colors.red),
+                  const SizedBox(height: 8),
+                  Text('Error: $error'),
+                ],
+              ),
             ),
-          ),
-        AsyncData(:final value) => _Body(profile: value),
-      },
+          AsyncData(:final value) => _Body(profile: value),
+        },
+      ),
     );
   }
 }
@@ -76,16 +79,20 @@ class _Body extends HookConsumerWidget {
             decoration: const InputDecoration(
               labelText: '名前',
               hintText: 'NO NAME',
+              border: OutlineInputBorder(),
             ),
+            maxLength: 20,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           TextField(
             controller: commentController,
             decoration: const InputDecoration(
               labelText: 'コメント',
+              border: OutlineInputBorder(),
             ),
+            maxLength: 100,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 24),
           FilledButton(
             onPressed: () async {
               final newProfile = editingProfile.value.copyWith(
