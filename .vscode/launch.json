@@ -1,6 +1,16 @@
 {
-  "version": "0.2.0",
   "configurations": [
+    {
+      "name": "Reader (debug)",
+      "cwd": "apps/reader",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "args": [
+        "--web-port",
+        "62784"
+      ]
+    },
     {
       "name": "Website (debug)",
       "cwd": "apps/website",

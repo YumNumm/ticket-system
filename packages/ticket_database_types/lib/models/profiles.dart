@@ -7,6 +7,7 @@ part 'profiles.g.dart';
 class Profiles with _$Profiles {
   const factory Profiles({
     required String id,
+    required Role role,
     String? name,
     String? avatarName,
     String? comment,
@@ -14,4 +15,12 @@ class Profiles with _$Profiles {
 
   factory Profiles.fromJson(Map<String, dynamic> json) =>
       _$ProfilesFromJson(json);
+}
+
+enum Role {
+  admin,
+  user,
+  sponsor,
+  speaker,
+  ;
 }

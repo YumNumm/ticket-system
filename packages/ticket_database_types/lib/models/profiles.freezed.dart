@@ -21,6 +21,7 @@ Profiles _$ProfilesFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Profiles {
   String get id => throw _privateConstructorUsedError;
+  Role get role => throw _privateConstructorUsedError;
   String? get name => throw _privateConstructorUsedError;
   String? get avatarName => throw _privateConstructorUsedError;
   String? get comment => throw _privateConstructorUsedError;
@@ -36,7 +37,12 @@ abstract class $ProfilesCopyWith<$Res> {
   factory $ProfilesCopyWith(Profiles value, $Res Function(Profiles) then) =
       _$ProfilesCopyWithImpl<$Res, Profiles>;
   @useResult
-  $Res call({String id, String? name, String? avatarName, String? comment});
+  $Res call(
+      {String id,
+      Role role,
+      String? name,
+      String? avatarName,
+      String? comment});
 }
 
 /// @nodoc
@@ -53,6 +59,7 @@ class _$ProfilesCopyWithImpl<$Res, $Val extends Profiles>
   @override
   $Res call({
     Object? id = null,
+    Object? role = null,
     Object? name = freezed,
     Object? avatarName = freezed,
     Object? comment = freezed,
@@ -62,6 +69,10 @@ class _$ProfilesCopyWithImpl<$Res, $Val extends Profiles>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
+      role: null == role
+          ? _value.role
+          : role // ignore: cast_nullable_to_non_nullable
+              as Role,
       name: freezed == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
@@ -86,7 +97,12 @@ abstract class _$$ProfilesImplCopyWith<$Res>
       __$$ProfilesImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id, String? name, String? avatarName, String? comment});
+  $Res call(
+      {String id,
+      Role role,
+      String? name,
+      String? avatarName,
+      String? comment});
 }
 
 /// @nodoc
@@ -101,6 +117,7 @@ class __$$ProfilesImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
+    Object? role = null,
     Object? name = freezed,
     Object? avatarName = freezed,
     Object? comment = freezed,
@@ -110,6 +127,10 @@ class __$$ProfilesImplCopyWithImpl<$Res>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
+      role: null == role
+          ? _value.role
+          : role // ignore: cast_nullable_to_non_nullable
+              as Role,
       name: freezed == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
@@ -130,13 +151,19 @@ class __$$ProfilesImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$ProfilesImpl implements _Profiles {
   const _$ProfilesImpl(
-      {required this.id, this.name, this.avatarName, this.comment});
+      {required this.id,
+      required this.role,
+      this.name,
+      this.avatarName,
+      this.comment});
 
   factory _$ProfilesImpl.fromJson(Map<String, dynamic> json) =>
       _$$ProfilesImplFromJson(json);
 
   @override
   final String id;
+  @override
+  final Role role;
   @override
   final String? name;
   @override
@@ -146,7 +173,7 @@ class _$ProfilesImpl implements _Profiles {
 
   @override
   String toString() {
-    return 'Profiles(id: $id, name: $name, avatarName: $avatarName, comment: $comment)';
+    return 'Profiles(id: $id, role: $role, name: $name, avatarName: $avatarName, comment: $comment)';
   }
 
   @override
@@ -155,6 +182,7 @@ class _$ProfilesImpl implements _Profiles {
         (other.runtimeType == runtimeType &&
             other is _$ProfilesImpl &&
             (identical(other.id, id) || other.id == id) &&
+            (identical(other.role, role) || other.role == role) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.avatarName, avatarName) ||
                 other.avatarName == avatarName) &&
@@ -163,7 +191,8 @@ class _$ProfilesImpl implements _Profiles {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, avatarName, comment);
+  int get hashCode =>
+      Object.hash(runtimeType, id, role, name, avatarName, comment);
 
   @JsonKey(ignore: true)
   @override
@@ -182,6 +211,7 @@ class _$ProfilesImpl implements _Profiles {
 abstract class _Profiles implements Profiles {
   const factory _Profiles(
       {required final String id,
+      required final Role role,
       final String? name,
       final String? avatarName,
       final String? comment}) = _$ProfilesImpl;
@@ -191,6 +221,8 @@ abstract class _Profiles implements Profiles {
 
   @override
   String get id;
+  @override
+  Role get role;
   @override
   String? get name;
   @override

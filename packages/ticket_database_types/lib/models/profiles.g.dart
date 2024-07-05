@@ -15,6 +15,7 @@ _$ProfilesImpl _$$ProfilesImplFromJson(Map<String, dynamic> json) =>
       ($checkedConvert) {
         final val = _$ProfilesImpl(
           id: $checkedConvert('id', (v) => v as String),
+          role: $checkedConvert('role', (v) => $enumDecode(_$RoleEnumMap, v)),
           name: $checkedConvert('name', (v) => v as String?),
           avatarName: $checkedConvert('avatar_name', (v) => v as String?),
           comment: $checkedConvert('comment', (v) => v as String?),
@@ -27,7 +28,15 @@ _$ProfilesImpl _$$ProfilesImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$ProfilesImplToJson(_$ProfilesImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'role': _$RoleEnumMap[instance.role]!,
       'name': instance.name,
       'avatar_name': instance.avatarName,
       'comment': instance.comment,
     };
+
+const _$RoleEnumMap = {
+  Role.admin: 'admin',
+  Role.user: 'user',
+  Role.sponsor: 'sponsor',
+  Role.speaker: 'speaker',
+};
