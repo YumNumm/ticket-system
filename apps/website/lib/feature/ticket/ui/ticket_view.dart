@@ -268,7 +268,7 @@ class _TicketCard extends StatelessWidget {
           ),
           builder: (context, followLink) => FloatingActionButton.extended(
             label: const Text('Apple Walletに追加する'),
-            onPressed: followLink,
+            onPressed: () async => followLink?.call(),
             icon: const Icon(Icons.apple),
           ),
         ),
