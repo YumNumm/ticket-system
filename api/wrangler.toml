@@ -6,3 +6,5 @@ main = "src/index.ts"
 compatibility_flags = ["nodejs_compat"]
 placement = { mode = "smart" }
 workers_dev = false
+
+rules = [{ type = "Data", globs = ["**/*.png"], fallthrough = true }]

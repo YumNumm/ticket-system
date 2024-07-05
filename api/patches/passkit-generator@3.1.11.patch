@@ -1,0 +1,4967 @@
+diff --git a/lib/Bundle.d.ts b/lib/Bundle.d.ts
+index de2e9c7c7889040e64d5730d67531790c239fb55..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/Bundle.d.ts
++++ b/lib/Bundle.d.ts
+@@ -1,103 +0,0 @@
+-/// <reference types="node" />
+-/// <reference types="node" />
+-import { Stream } from "stream";
+-export declare const filesSymbol: unique symbol;
+-export declare const freezeSymbol: unique symbol;
+-export declare const mimeTypeSymbol: unique symbol;
+-declare namespace Mime {
+-    type type = string;
+-    type subtype = string;
+-}
+-/**
+- * Defines a container ready to be distributed.
+- * If no mimeType is passed to the constructor,
+- * it will throw an error.
+- */
+-export default class Bundle {
+-    private [filesSymbol];
+-    private [mimeTypeSymbol];
+-    constructor(mimeType: `${Mime.type}/${Mime.subtype}`);
+-    /**
+-     * Creates a bundle and exposes the
+-     * function to freeze it manually once
+-     * completed.
+-     *
+-     * This was made to not expose freeze
+-     * function outside of Bundle class.
+-     *
+-     * Normally, a bundle would get freezed
+-     * when using getAsBuffer or getAsStream
+-     * but when creating a PKPasses archive,
+-     * we need to freeze the bundle so the
+-     * user cannot add more files (we want to
+-     * allow them to only the selected files)
+-     * but also letting them choose how to
+-     * export it.
+-     *
+-     * @param mimeType
+-     * @returns
+-     */
+-    static freezable(mimeType: `${Mime.type}/${Mime.subtype}`): [Bundle, Function];
+-    /**
+-     * Retrieves bundle's mimeType
+-     */
+-    get mimeType(): string;
+-    /**
+-     * Freezes the bundle so no more files
+-     * can be added any further.
+-     */
+-    private [freezeSymbol];
+-    /**
+-     * Tells if this bundle still allows files to be added.
+-     * @returns false if files are allowed, true otherwise
+-     */
+-    get isFrozen(): boolean;
+-    /**
+-     * Returns a copy of the current list of buffers
+-     * that have been added to the class.
+-     *
+-     * It does not include translation files, manifest
+-     * and signature.
+-     *
+-     * Final files list might differ due to export
+-     * conditions.
+-     */
+-    get files(): string[];
+-    /**
+-     * Allows files to be added to the bundle.
+-     * If the bundle is closed, it will throw an error.
+-     *
+-     * @param fileName
+-     * @param buffer
+-     */
+-    addBuffer(fileName: string, buffer: Buffer): void;
+-    /**
+-     * Closes the bundle and returns it as a Buffer.
+-     * Once closed, the bundle does not allow files
+-     * to be added any further.
+-     *
+-     * @returns Buffer
+-     */
+-    getAsBuffer(): Buffer;
+-    /**
+-     * Closes the bundle and returns it as a stream.
+-     * Once closed, the bundle does not allow files
+-     * to be added any further.
+-     *
+-     * @returns
+-     */
+-    getAsStream(): Stream;
+-    /**
+-     * Closes the bundle and returns it as an object.
+-     * This allows developers to choose a different way
+-     * of serving, analyzing or zipping the file, outside the
+-     * default compression system.
+-     *
+-     * @returns a frozen object containing files paths as key
+-     * 		and Buffers as content.
+-     */
+-    getAsRaw(): {
+-        [filePath: string]: Buffer;
+-    };
+-}
+-export {};
+diff --git a/lib/Bundle.js b/lib/Bundle.js
+index 80888384e525e298ec1ad49e0109f9e9f9bf2d03..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/Bundle.js
++++ b/lib/Bundle.js
+@@ -1,147 +0,0 @@
+-"use strict";
+-var _a;
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.mimeTypeSymbol = exports.freezeSymbol = exports.filesSymbol = void 0;
+-const tslib_1 = require("tslib");
+-const stream_1 = require("stream");
+-const Messages = tslib_1.__importStar(require("./messages"));
+-const zip = tslib_1.__importStar(require("do-not-zip"));
+-exports.filesSymbol = Symbol("bundleFiles");
+-exports.freezeSymbol = Symbol("bundleFreeze");
+-exports.mimeTypeSymbol = Symbol("bundleMimeType");
+-/**
+- * Defines a container ready to be distributed.
+- * If no mimeType is passed to the constructor,
+- * it will throw an error.
+- */
+-class Bundle {
+-    constructor(mimeType) {
+-        this[_a] = {};
+-        if (!mimeType) {
+-            throw new Error(Messages.BUNDLE.MIME_TYPE_MISSING);
+-        }
+-        this[exports.mimeTypeSymbol] = mimeType;
+-    }
+-    /**
+-     * Creates a bundle and exposes the
+-     * function to freeze it manually once
+-     * completed.
+-     *
+-     * This was made to not expose freeze
+-     * function outside of Bundle class.
+-     *
+-     * Normally, a bundle would get freezed
+-     * when using getAsBuffer or getAsStream
+-     * but when creating a PKPasses archive,
+-     * we need to freeze the bundle so the
+-     * user cannot add more files (we want to
+-     * allow them to only the selected files)
+-     * but also letting them choose how to
+-     * export it.
+-     *
+-     * @param mimeType
+-     * @returns
+-     */
+-    static freezable(mimeType) {
+-        const bundle = new Bundle(mimeType);
+-        return [bundle, () => bundle[exports.freezeSymbol]()];
+-    }
+-    /**
+-     * Retrieves bundle's mimeType
+-     */
+-    get mimeType() {
+-        return this[exports.mimeTypeSymbol];
+-    }
+-    /**
+-     * Freezes the bundle so no more files
+-     * can be added any further.
+-     */
+-    [(_a = exports.filesSymbol, exports.freezeSymbol)]() {
+-        if (this.isFrozen) {
+-            return;
+-        }
+-        Object.freeze(this[exports.filesSymbol]);
+-    }
+-    /**
+-     * Tells if this bundle still allows files to be added.
+-     * @returns false if files are allowed, true otherwise
+-     */
+-    get isFrozen() {
+-        return Object.isFrozen(this[exports.filesSymbol]);
+-    }
+-    /**
+-     * Returns a copy of the current list of buffers
+-     * that have been added to the class.
+-     *
+-     * It does not include translation files, manifest
+-     * and signature.
+-     *
+-     * Final files list might differ due to export
+-     * conditions.
+-     */
+-    get files() {
+-        return Object.keys(this[exports.filesSymbol]);
+-    }
+-    /**
+-     * Allows files to be added to the bundle.
+-     * If the bundle is closed, it will throw an error.
+-     *
+-     * @param fileName
+-     * @param buffer
+-     */
+-    addBuffer(fileName, buffer) {
+-        if (this.isFrozen) {
+-            throw new Error(Messages.BUNDLE.CLOSED);
+-        }
+-        this[exports.filesSymbol][fileName] = buffer;
+-    }
+-    /**
+-     * Closes the bundle and returns it as a Buffer.
+-     * Once closed, the bundle does not allow files
+-     * to be added any further.
+-     *
+-     * @returns Buffer
+-     */
+-    getAsBuffer() {
+-        this[exports.freezeSymbol]();
+-        return zip.toBuffer(createZipFilesMap(this[exports.filesSymbol]));
+-    }
+-    /**
+-     * Closes the bundle and returns it as a stream.
+-     * Once closed, the bundle does not allow files
+-     * to be added any further.
+-     *
+-     * @returns
+-     */
+-    getAsStream() {
+-        this[exports.freezeSymbol]();
+-        return stream_1.Readable.from(zip.toBuffer(createZipFilesMap(this[exports.filesSymbol])));
+-    }
+-    /**
+-     * Closes the bundle and returns it as an object.
+-     * This allows developers to choose a different way
+-     * of serving, analyzing or zipping the file, outside the
+-     * default compression system.
+-     *
+-     * @returns a frozen object containing files paths as key
+-     * 		and Buffers as content.
+-     */
+-    getAsRaw() {
+-        this[exports.freezeSymbol]();
+-        return Object.freeze({ ...this[exports.filesSymbol] });
+-    }
+-}
+-exports.default = Bundle;
+-/**
+- * Creates a files map for do-not-zip
+- *
+- * @param files
+- * @returns
+- */
+-function createZipFilesMap(files) {
+-    return Object.entries(files).map(([path, data]) => ({
+-        path,
+-        data,
+-    }));
+-}
+-//# sourceMappingURL=Bundle.js.map
+\ No newline at end of file
+diff --git a/lib/FieldsArray.d.ts b/lib/FieldsArray.d.ts
+index 862368163f50d8a752a694677ef94869d178c54f..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/FieldsArray.d.ts
++++ b/lib/FieldsArray.d.ts
+@@ -1,19 +0,0 @@
+-import type PKPass from "./PKPass";
+-import * as Schemas from "./schemas";
+-/**
+- * Class to represent lower-level keys pass fields
+- * @see https://apple.co/2wkUBdh
+- */
+-declare const passInstanceSymbol: unique symbol;
+-declare const sharedKeysPoolSymbol: unique symbol;
+-export default class FieldsArray extends Array<Schemas.Field> {
+-    private [passInstanceSymbol];
+-    private [sharedKeysPoolSymbol];
+-    constructor(passInstance: InstanceType<typeof PKPass>, keysPool: Set<string>, fieldSchema: typeof Schemas.Field | typeof Schemas.FieldWithRow, ...args: Schemas.Field[]);
+-    push(...items: Schemas.Field[]): number;
+-    pop(): Schemas.Field;
+-    splice(start: number, deleteCount: number, ...items: Schemas.Field[]): Schemas.Field[];
+-    shift(): Schemas.Field;
+-    unshift(...items: Schemas.Field[]): number;
+-}
+-export {};
+diff --git a/lib/FieldsArray.js b/lib/FieldsArray.js
+index 25b387ef418aef51eb2ad0aac38cc35d1202325a..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/FieldsArray.js
++++ b/lib/FieldsArray.js
+@@ -1,78 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-const tslib_1 = require("tslib");
+-const Schemas = tslib_1.__importStar(require("./schemas"));
+-const Utils = tslib_1.__importStar(require("./utils"));
+-const Messages = tslib_1.__importStar(require("./messages"));
+-/**
+- * Class to represent lower-level keys pass fields
+- * @see https://apple.co/2wkUBdh
+- */
+-const passInstanceSymbol = Symbol("passInstance");
+-const sharedKeysPoolSymbol = Symbol("keysPool");
+-const fieldSchemaSymbol = Symbol("fieldSchema");
+-class FieldsArray extends Array {
+-    constructor(passInstance, keysPool, fieldSchema, ...args) {
+-        super(...args);
+-        this[fieldSchemaSymbol] = fieldSchema;
+-        this[passInstanceSymbol] = passInstance;
+-        this[sharedKeysPoolSymbol] = keysPool;
+-    }
+-    push(...items) {
+-        const validItems = registerWithValidation(this, ...items);
+-        return super.push(...validItems);
+-    }
+-    pop() {
+-        return unregisterItems(this, () => super.pop());
+-    }
+-    splice(start, deleteCount, ...items) {
+-        // Perfoming frozen check, validation and getting valid items
+-        const validItems = registerWithValidation(this, ...items);
+-        for (let i = start; i < start + deleteCount; i++) {
+-            this[sharedKeysPoolSymbol].delete(this[i].key);
+-        }
+-        return super.splice(start, deleteCount, ...validItems);
+-    }
+-    shift() {
+-        return unregisterItems(this, () => super.shift());
+-    }
+-    unshift(...items) {
+-        const validItems = registerWithValidation(this, ...items);
+-        return super.unshift(...validItems);
+-    }
+-}
+-exports.default = FieldsArray;
+-function registerWithValidation(instance, ...items) {
+-    Utils.assertUnfrozen(instance[passInstanceSymbol]);
+-    let validItems = [];
+-    for (const field of items) {
+-        if (!field) {
+-            console.warn(Messages.format(Messages.FIELDS.INVALID, field));
+-            continue;
+-        }
+-        try {
+-            Schemas.assertValidity(instance[fieldSchemaSymbol], field, Messages.FIELDS.INVALID);
+-            if (instance[sharedKeysPoolSymbol].has(field.key)) {
+-                throw new TypeError(Messages.format(Messages.FIELDS.REPEATED_KEY, field.key));
+-            }
+-            instance[sharedKeysPoolSymbol].add(field.key);
+-            validItems.push(field);
+-        }
+-        catch (err) {
+-            if (err instanceof Error) {
+-                console.warn(err.message ? err.message : err);
+-            }
+-            else {
+-                console.warn(err);
+-            }
+-        }
+-    }
+-    return validItems;
+-}
+-function unregisterItems(instance, removeFn) {
+-    Utils.assertUnfrozen(instance[passInstanceSymbol]);
+-    const element = removeFn();
+-    instance[sharedKeysPoolSymbol].delete(element.key);
+-    return element;
+-}
+-//# sourceMappingURL=FieldsArray.js.map
+\ No newline at end of file
+diff --git a/lib/PKPass.d.ts b/lib/PKPass.d.ts
+index a429aa27bd16166a811f45410246ff37edcb4d8e..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/PKPass.d.ts
++++ b/lib/PKPass.d.ts
+@@ -1,318 +0,0 @@
+-/// <reference types="node" />
+-/// <reference types="node" />
+-import { Stream } from "stream";
+-import { Buffer } from "buffer";
+-import Bundle from "./Bundle";
+-import * as Schemas from "./schemas";
+-declare const propsSymbol: unique symbol;
+-declare const localizationSymbol: unique symbol;
+-declare const importMetadataSymbol: unique symbol;
+-declare const createManifestSymbol: unique symbol;
+-declare const closePassSymbol: unique symbol;
+-declare const passTypeSymbol: unique symbol;
+-declare const certificatesSymbol: unique symbol;
+-export default class PKPass extends Bundle {
+-    private [certificatesSymbol];
+-    private [propsSymbol];
+-    private [localizationSymbol];
+-    private [passTypeSymbol];
+-    /**
+-     * Either create a pass from another one
+-     * or a disk path.
+-     *
+-     * @param source
+-     * @returns
+-     */
+-    static from<S extends PKPass | Schemas.Template>(source: S, props?: Schemas.OverridablePassProps): Promise<PKPass>;
+-    /**
+-     * Creates a Bundle made of PKPass to be distributed
+-     * as a `.pkpasses` zip file. Returns a Bundle instance
+-     * so it can be outputted both as stream or as a buffer.
+-     *
+-     * Using this will freeze all the instances passed as
+-     * parameter.
+-     *
+-     * Throws if not all the files are instance of PKPass.
+-     *
+-     * @param passes
+-     */
+-    static pack(...passes: PKPass[]): Bundle;
+-    constructor(buffers?: Schemas.FileBuffers, certificates?: Schemas.CertificatesSchema, props?: Schemas.OverridablePassProps);
+-    /**
+-     * Allows changing the certificates, if needed.
+-     * They are actually expected to be received in
+-     * the constructor, but they can get overridden
+-     * here for whatever purpose.
+-     *
+-     * When using this setter, all certificates are
+-     * expected to be received, or an exception will
+-     * be thrown.
+-     *
+-     * @param certs
+-     */
+-    set certificates(certs: Schemas.CertificatesSchema);
+-    /**
+-     * Allows retrieving current languages
+-     */
+-    get languages(): string[];
+-    /**
+-     * Allows getting an image of the props
+-     * that are composing your pass instance.
+-     */
+-    get props(): Schemas.PassProps;
+-    /**
+-     * Allows setting a transitType property
+-     * for a boardingPass.
+-     *
+-     * @throws if current type is not "boardingPass".
+-     * @param value
+-     */
+-    set transitType(value: Schemas.TransitType);
+-    /**
+-     * Allows getting the current transitType
+-     * from pass props.
+-     *
+-     * @throws (automatically) if current type is not "boardingPass".
+-     */
+-    get transitType(): Schemas.TransitType;
+-    /**
+-     * Allows accessing to primaryFields object.
+-     *
+-     * @throws (automatically) if no valid pass.json
+-     * 		has been parsed yet or, anyway, if current
+-     * 		instance has not a valid type set yet.
+-     */
+-    get primaryFields(): Schemas.Field[];
+-    /**
+-     * Allows accessing to secondaryFields object
+-     *
+-     * @throws (automatically) if no valid pass.json
+-     * 		has been parsed yet or, anyway, if current
+-     * 		instance has not a valid type set yet.
+-     */
+-    get secondaryFields(): Schemas.Field[];
+-    /**
+-     * Allows accessing to auxiliaryFields object
+-     *
+-     * For Typescript users: this signature allows
+-     * in any case to add the 'row' field, but on
+-     * runtime they are only allowed on "eventTicket"
+-     * passes.
+-     *
+-     * @throws (automatically) if no valid pass.json
+-     * 		has been parsed yet or, anyway, if current
+-     * 		instance has not a valid type set yet.
+-     */
+-    get auxiliaryFields(): Schemas.FieldWithRow[];
+-    /**
+-     * Allows accessing to headerFields object
+-     *
+-     * @throws (automatically) if no valid pass.json
+-     * 		has been parsed yet or, anyway, if current
+-     * 		instance has not a valid type set yet.
+-     */
+-    get headerFields(): Schemas.Field[];
+-    /**
+-     * Allows accessing to backFields object
+-     *
+-     * @throws (automatically) if no valid pass.json
+-     * 		has been parsed yet or, anyway, if current
+-     * 		instance has not a valid type set yet.
+-     */
+-    get backFields(): Schemas.Field[];
+-    /**
+-     * Allows setting a pass type.
+-     *
+-     * **Warning**: setting a type with this setter,
+-     * will reset all the fields (primaryFields,
+-     * secondaryFields, headerFields, auxiliaryFields, backFields),
+-     * both imported or manually set.
+-     */
+-    set type(nextType: Schemas.PassTypesProps | undefined);
+-    get type(): Schemas.PassTypesProps | undefined;
+-    /**
+-     * Allows adding a new asset inside the pass / bundle with
+-     * the following exceptions:
+-     *
+-     * - Empty buffers are ignored;
+-     * - `manifest.json` and `signature` files will be ignored;
+-     * - `pass.json` will be read validated and merged in the
+-     * 	current instance, if it wasn't added previously.
+-     * 	It's properties will overwrite the instance ones.
+-     * 	You might loose data;
+-     * - `pass.strings` files will be read, parsed and merged
+-     * 	with the current translations. Comments will be ignored;
+-     * - `personalization.json` will be read, validated and added.
+-     * 	They will be stripped out when exporting the pass if
+-     * 	it won't have NFC details or if any of the personalization
+-     * 	files is missing;
+-     *
+-     * @param pathName
+-     * @param buffer
+-     */
+-    addBuffer(pathName: string, buffer: Buffer): void;
+-    /**
+-     * Given data from a pass.json, reads them to bring them
+-     * into the current pass instance.
+-     *
+-     * @param data
+-     */
+-    private [importMetadataSymbol];
+-    /**
+-     * Creates the manifest starting from files
+-     * added to the bundle
+-     */
+-    private [createManifestSymbol];
+-    /**
+-     * Applies the last validation checks against props,
+-     * applies the props to pass.json and creates l10n
+-     * files and folders and creates manifest and
+-     * signature files
+-     */
+-    private [closePassSymbol];
+-    /**
+-     * Exports the pass as a zip buffer. When this method
+-     * is invoked, the bundle will get frozen and, thus,
+-     * no files will be allowed to be added any further.
+-     *
+-     * @returns
+-     */
+-    getAsBuffer(): Buffer;
+-    /**
+-     * Exports the pass as a zip stream. When this method
+-     * is invoked, the bundle will get frozen and, thus,
+-     * no files will be allowed to be added any further.
+-     *
+-     * @returns
+-     */
+-    getAsStream(): Stream;
+-    /**
+-     * Exports the pass as a list of file paths and buffers.
+-     * When this method is invoked, the bundle will get
+-     * frozen and, thus, no files will be allowed to be
+-     * added any further.
+-     *
+-     * This allows developers to choose a different way
+-     * of serving, analyzing or zipping the file, outside the
+-     * default compression system.
+-     *
+-     * @returns a frozen object containing files paths as key
+-     * 		and Buffers as content.
+-     */
+-    getAsRaw(): {
+-        [filePath: string]: Buffer;
+-    };
+-    /**
+-     * Allows to add a localization details to the
+-     * final bundle with some translations.
+-     *
+-     * If the language already exists, translations will be
+-     * merged with the existing ones.
+-     *
+-     * Setting `translations` to `null` fully deletes a language,
+-     * its translations and its files.
+-     *
+-     * @see https://developer.apple.com/documentation/walletpasses/creating_the_source_for_a_pass#3736718
+-     * @param lang
+-     * @param translations
+-     */
+-    localize(lang: string, translations: {
+-        [key: string]: string;
+-    } | null): void;
+-    /**
+-     * Allows to specify an expiration date for the pass.
+-     *
+-     * Pass `null` to remove the expiration date.
+-     *
+-     * @param date
+-     * @throws if pass is frozen due to previous export
+-     * @returns
+-     */
+-    setExpirationDate(date: Date | null): void;
+-    /**
+-     * Allows setting some beacons the OS should
+-     * react to and show this pass.
+-     *
+-     * Pass `null` to remove them at all.
+-     *
+-     * @example
+-     * ```ts
+-     *		PKPassInstance.setBeacons(null)
+-     *		PKPassInstance.setBeacons({
+-     *			proximityUUID: "00000-000000-0000-00000000000",
+-     *		});
+-     * ```
+-     *
+-     * @see https://developer.apple.com/documentation/walletpasses/pass/beacons
+-     * @param beacons
+-     * @throws if pass is frozen due to previous export
+-     * @returns
+-     */
+-    setBeacons(beacons: null): void;
+-    setBeacons(...beacons: Schemas.Beacon[]): void;
+-    /**
+-     * Allows setting some locations the OS should
+-     * react to and show this pass.
+-     *
+-     * Pass `null` to remove them at all.
+-     *
+-     * @example
+-     * ```ts
+-     *		PKPassInstance.setLocations(null)
+-     *		PKPassInstance.setLocations({
+-     *			latitude: 0.5333245342
+-     *			longitude: 0.2135332252
+-     *		});
+-     * ```
+-     *
+-     * @see https://developer.apple.com/documentation/walletpasses/pass/locations
+-     * @param locations
+-     * @throws if pass is frozen due to previous export
+-     * @returns
+-     */
+-    setLocations(locations: null): void;
+-    setLocations(...locations: Schemas.Location[]): void;
+-    /**
+-     * Allows setting a relevant date in which the OS
+-     * should show this pass.
+-     *
+-     * Pass `null` to remove relevant date from this pass.
+-     *
+-     * @param {Date | null} date
+-     * @throws if pass is frozen due to previous export
+-     */
+-    setRelevantDate(date: Date | null): void;
+-    /**
+-     * Allows to specify some barcodes formats.
+-     * As per the current specifications, only the first
+-     * will be shown to the user, without any possibility
+-     * to change it.
+-     *
+-     * It accepts either a string from which all formats will
+-     * be generated or a specific set of barcodes objects
+-     * to be validated and used.
+-     *
+-     * Pass `null` to remove all the barcodes.
+-     *
+-     * @see https://developer.apple.com/documentation/walletpasses/pass/barcodes
+-     * @param barcodes
+-     * @throws if pass is frozen due to previous export
+-     * @returns
+-     */
+-    setBarcodes(barcodes: null): void;
+-    setBarcodes(message: string): void;
+-    setBarcodes(...barcodes: Schemas.Barcode[]): void;
+-    /**
+-     * Allows to specify details to make this, an
+-     * NFC-capable pass.
+-     *
+-     * Pass `null` as parameter to remove it at all.
+-     *
+-     * @see https://developer.apple.com/documentation/walletpasses/pass/nfc
+-     * @param data
+-     * @throws if pass is frozen due to previous export
+-     * @returns
+-     */
+-    setNFC(nfc: Schemas.NFC | null): void;
+-}
+-export {};
+diff --git a/lib/PKPass.js b/lib/PKPass.js
+index 79fa8f988bf868e53cb25f8a1a58fac299285353..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/PKPass.js
++++ b/lib/PKPass.js
+@@ -1,681 +0,0 @@
+-"use strict";
+-var _a, _b, _c;
+-Object.defineProperty(exports, "__esModule", { value: true });
+-const tslib_1 = require("tslib");
+-const buffer_1 = require("buffer");
+-const path_1 = tslib_1.__importDefault(require("path"));
+-const FieldsArray_1 = tslib_1.__importDefault(require("./FieldsArray"));
+-const Bundle_1 = tslib_1.__importStar(require("./Bundle"));
+-const getModelFolderContents_1 = tslib_1.__importDefault(require("./getModelFolderContents"));
+-const Schemas = tslib_1.__importStar(require("./schemas"));
+-const Signature = tslib_1.__importStar(require("./Signature"));
+-const Strings = tslib_1.__importStar(require("./StringsUtils"));
+-const Utils = tslib_1.__importStar(require("./utils"));
+-const Messages = tslib_1.__importStar(require("./messages"));
+-const propsSymbol = Symbol("props");
+-const localizationSymbol = Symbol("pass.l10n");
+-const importMetadataSymbol = Symbol("import.pass.metadata");
+-const createManifestSymbol = Symbol("pass.manifest");
+-const closePassSymbol = Symbol("pass.close");
+-const passTypeSymbol = Symbol("pass.type");
+-const certificatesSymbol = Symbol("pass.certificates");
+-const RegExps = {
+-    PASS_JSON: /pass\.json/,
+-    MANIFEST_OR_SIGNATURE: /manifest|signature/,
+-    PERSONALIZATION: {
+-        JSON: /personalization\.json/,
+-        LOGO: /personalizationLogo@(?:.{2})/,
+-    },
+-    PASS_STRINGS: /(?<lang>[a-zA-Z-]{2,}).lproj\/pass\.strings/,
+-    PASS_ICON: /icon(?:@\d{1}x)?/,
+-};
+-class PKPass extends Bundle_1.default {
+-    /**
+-     * Either create a pass from another one
+-     * or a disk path.
+-     *
+-     * @param source
+-     * @returns
+-     */
+-    static async from(source, props) {
+-        let certificates = undefined;
+-        let buffers = undefined;
+-        if (!source) {
+-            throw new TypeError(Messages.format(Messages.FROM.MISSING_SOURCE, source));
+-        }
+-        if (source instanceof PKPass) {
+-            /** Cloning is happening here */
+-            certificates = source[certificatesSymbol];
+-            buffers = {};
+-            const buffersEntries = Object.entries(source[Bundle_1.filesSymbol]);
+-            /** Cloning all the buffers to prevent unwanted edits */
+-            for (let i = 0; i < buffersEntries.length; i++) {
+-                const [fileName, contentBuffer] = buffersEntries[i];
+-                buffers[fileName] = buffer_1.Buffer.alloc(contentBuffer.length);
+-                contentBuffer.copy(buffers[fileName]);
+-            }
+-            /**
+-             * Moving props to pass.json instead of overrides
+-             * because many might get excluded when passing
+-             * through validation
+-             */
+-            buffers["pass.json"] = buffer_1.Buffer.from(JSON.stringify(source[propsSymbol]));
+-        }
+-        else {
+-            Schemas.assertValidity(Schemas.Template, source, Messages.TEMPLATE.INVALID);
+-            buffers = await (0, getModelFolderContents_1.default)(source.model);
+-            certificates = source.certificates;
+-        }
+-        return new PKPass(buffers, certificates, props);
+-    }
+-    /**
+-     * Creates a Bundle made of PKPass to be distributed
+-     * as a `.pkpasses` zip file. Returns a Bundle instance
+-     * so it can be outputted both as stream or as a buffer.
+-     *
+-     * Using this will freeze all the instances passed as
+-     * parameter.
+-     *
+-     * Throws if not all the files are instance of PKPass.
+-     *
+-     * @param passes
+-     */
+-    static pack(...passes) {
+-        const [bundle, freezeBundle] = Bundle_1.default.freezable("application/vnd.apple.pkpasses");
+-        for (let i = 0; i < passes.length; i++) {
+-            const pass = passes[i];
+-            if (!(pass instanceof PKPass)) {
+-                throw new Error(Messages.PACK.INVALID);
+-            }
+-            bundle.addBuffer(`packed-pass-${i + 1}.pkpass`, pass.getAsBuffer());
+-        }
+-        freezeBundle();
+-        return bundle;
+-    }
+-    // **************** //
+-    // *** INSTANCE *** //
+-    // **************** //
+-    constructor(buffers, certificates, props) {
+-        super("application/vnd.apple.pkpass");
+-        this[_a] = {};
+-        this[_b] = {};
+-        this[_c] = undefined;
+-        if (buffers && typeof buffers === "object") {
+-            const buffersEntries = Object.entries(buffers);
+-            for (let i = buffersEntries.length, buffer; (buffer = buffersEntries[--i]);) {
+-                const [fileName, contentBuffer] = buffer;
+-                this.addBuffer(fileName, contentBuffer);
+-            }
+-        }
+-        else {
+-            console.warn(Messages.format(Messages.INIT.INVALID_BUFFERS, typeof buffers));
+-        }
+-        if (props) {
+-            /** Overrides validation and pushing in props */
+-            const overridesValidation = Schemas.validate(Schemas.OverridablePassProps, props);
+-            Object.assign(this[propsSymbol], overridesValidation);
+-        }
+-        if (certificates) {
+-            this.certificates = certificates;
+-        }
+-    }
+-    /**
+-     * Allows changing the certificates, if needed.
+-     * They are actually expected to be received in
+-     * the constructor, but they can get overridden
+-     * here for whatever purpose.
+-     *
+-     * When using this setter, all certificates are
+-     * expected to be received, or an exception will
+-     * be thrown.
+-     *
+-     * @param certs
+-     */
+-    set certificates(certs) {
+-        Utils.assertUnfrozen(this);
+-        Schemas.assertValidity(Schemas.CertificatesSchema, certs, Messages.CERTIFICATES.INVALID);
+-        this[certificatesSymbol] = certs;
+-    }
+-    /**
+-     * Allows retrieving current languages
+-     */
+-    get languages() {
+-        return Object.keys(this[localizationSymbol]);
+-    }
+-    /**
+-     * Allows getting an image of the props
+-     * that are composing your pass instance.
+-     */
+-    get props() {
+-        return Utils.cloneRecursive(this[propsSymbol]);
+-    }
+-    /**
+-     * Allows setting a transitType property
+-     * for a boardingPass.
+-     *
+-     * @throws if current type is not "boardingPass".
+-     * @param value
+-     */
+-    set transitType(value) {
+-        Utils.assertUnfrozen(this);
+-        if (this.type !== "boardingPass") {
+-            throw new TypeError(Messages.TRANSIT_TYPE.UNEXPECTED_PASS_TYPE);
+-        }
+-        Schemas.assertValidity(Schemas.TransitType, value, Messages.TRANSIT_TYPE.INVALID);
+-        this[propsSymbol]["boardingPass"].transitType = value;
+-    }
+-    /**
+-     * Allows getting the current transitType
+-     * from pass props.
+-     *
+-     * @throws (automatically) if current type is not "boardingPass".
+-     */
+-    get transitType() {
+-        return this[propsSymbol]["boardingPass"].transitType;
+-    }
+-    /**
+-     * Allows accessing to primaryFields object.
+-     *
+-     * @throws (automatically) if no valid pass.json
+-     * 		has been parsed yet or, anyway, if current
+-     * 		instance has not a valid type set yet.
+-     */
+-    get primaryFields() {
+-        return this[propsSymbol][this.type].primaryFields;
+-    }
+-    /**
+-     * Allows accessing to secondaryFields object
+-     *
+-     * @throws (automatically) if no valid pass.json
+-     * 		has been parsed yet or, anyway, if current
+-     * 		instance has not a valid type set yet.
+-     */
+-    get secondaryFields() {
+-        return this[propsSymbol][this.type].secondaryFields;
+-    }
+-    /**
+-     * Allows accessing to auxiliaryFields object
+-     *
+-     * For Typescript users: this signature allows
+-     * in any case to add the 'row' field, but on
+-     * runtime they are only allowed on "eventTicket"
+-     * passes.
+-     *
+-     * @throws (automatically) if no valid pass.json
+-     * 		has been parsed yet or, anyway, if current
+-     * 		instance has not a valid type set yet.
+-     */
+-    get auxiliaryFields() {
+-        return this[propsSymbol][this.type].auxiliaryFields;
+-    }
+-    /**
+-     * Allows accessing to headerFields object
+-     *
+-     * @throws (automatically) if no valid pass.json
+-     * 		has been parsed yet or, anyway, if current
+-     * 		instance has not a valid type set yet.
+-     */
+-    get headerFields() {
+-        return this[propsSymbol][this.type].headerFields;
+-    }
+-    /**
+-     * Allows accessing to backFields object
+-     *
+-     * @throws (automatically) if no valid pass.json
+-     * 		has been parsed yet or, anyway, if current
+-     * 		instance has not a valid type set yet.
+-     */
+-    get backFields() {
+-        return this[propsSymbol][this.type].backFields;
+-    }
+-    /**
+-     * Allows setting a pass type.
+-     *
+-     * **Warning**: setting a type with this setter,
+-     * will reset all the fields (primaryFields,
+-     * secondaryFields, headerFields, auxiliaryFields, backFields),
+-     * both imported or manually set.
+-     */
+-    set type(nextType) {
+-        Utils.assertUnfrozen(this);
+-        Schemas.assertValidity(Schemas.PassType, nextType, Messages.PASS_TYPE.INVALID);
+-        /** Shut up, typescript strict mode! */
+-        const type = nextType;
+-        if (this.type) {
+-            /**
+-             * Removing reference to previous type and its content because
+-             * we might have some differences between types. It is way easier
+-             * to reset everything instead of making checks.
+-             */
+-            this[propsSymbol][this.type] = undefined;
+-        }
+-        const sharedKeysPool = new Set();
+-        this[passTypeSymbol] = type;
+-        this[propsSymbol][type] = {
+-            headerFields /******/: new FieldsArray_1.default(this, sharedKeysPool, Schemas.Field),
+-            primaryFields /*****/: new FieldsArray_1.default(this, sharedKeysPool, Schemas.Field),
+-            secondaryFields /***/: new FieldsArray_1.default(this, sharedKeysPool, Schemas.Field),
+-            auxiliaryFields /***/: new FieldsArray_1.default(this, sharedKeysPool, type === "eventTicket" ? Schemas.FieldWithRow : Schemas.Field),
+-            backFields /********/: new FieldsArray_1.default(this, sharedKeysPool, Schemas.Field),
+-            transitType: undefined,
+-        };
+-    }
+-    get type() {
+-        var _d;
+-        return (_d = this[passTypeSymbol]) !== null && _d !== void 0 ? _d : undefined;
+-    }
+-    // **************************** //
+-    // *** ASSETS SETUP METHODS *** //
+-    // **************************** //
+-    /**
+-     * Allows adding a new asset inside the pass / bundle with
+-     * the following exceptions:
+-     *
+-     * - Empty buffers are ignored;
+-     * - `manifest.json` and `signature` files will be ignored;
+-     * - `pass.json` will be read validated and merged in the
+-     * 	current instance, if it wasn't added previously.
+-     * 	It's properties will overwrite the instance ones.
+-     * 	You might loose data;
+-     * - `pass.strings` files will be read, parsed and merged
+-     * 	with the current translations. Comments will be ignored;
+-     * - `personalization.json` will be read, validated and added.
+-     * 	They will be stripped out when exporting the pass if
+-     * 	it won't have NFC details or if any of the personalization
+-     * 	files is missing;
+-     *
+-     * @param pathName
+-     * @param buffer
+-     */
+-    addBuffer(pathName, buffer) {
+-        if (!(buffer === null || buffer === void 0 ? void 0 : buffer.length)) {
+-            return;
+-        }
+-        if (RegExps.MANIFEST_OR_SIGNATURE.test(pathName)) {
+-            return;
+-        }
+-        if (RegExps.PASS_JSON.test(pathName)) {
+-            if (this[Bundle_1.filesSymbol]["pass.json"]) {
+-                /**
+-                 * Ignoring any further addition. In a
+-                 * future we might consider merging instead
+-                 */
+-                return;
+-            }
+-            try {
+-                this[importMetadataSymbol](validateJSONBuffer(buffer, Schemas.PassProps));
+-            }
+-            catch (err) {
+-                console.warn(Messages.format(Messages.PASS_SOURCE.INVALID, err));
+-                return;
+-            }
+-            /**
+-             * Adding an empty buffer just for reference
+-             * that we received a valid pass.json file.
+-             * It will be reconciliated in export phase.
+-             */
+-            return super.addBuffer(pathName, buffer_1.Buffer.alloc(0));
+-        }
+-        if (RegExps.PERSONALIZATION.JSON.test(pathName)) {
+-            /**
+-             * We are still allowing `personalizationLogo@XX.png`
+-             * to be added to the bundle, but we'll delete it
+-             * once the pass is getting closed, if needed.
+-             */
+-            try {
+-                validateJSONBuffer(buffer, Schemas.Personalize);
+-            }
+-            catch (err) {
+-                console.warn(Messages.format(Messages.PERSONALIZE.INVALID, err));
+-                return;
+-            }
+-            return super.addBuffer(pathName, buffer);
+-        }
+-        /**
+-         * Converting Windows path to Unix path
+-         * @example de.lproj\\icon.png => de.lproj/icon.png
+-         */
+-        const normalizedPathName = pathName.replace(path_1.default.sep, "/");
+-        /**
+-         * If a new pass.strings file is added, we want to
+-         * prevent it from being merged and, instead, save
+-         * its translations for later
+-         */
+-        let match;
+-        if ((match = normalizedPathName.match(RegExps.PASS_STRINGS))) {
+-            const [, lang] = match;
+-            const parsedTranslations = Strings.parse(buffer).translations;
+-            if (!parsedTranslations.length) {
+-                return;
+-            }
+-            this.localize(lang, Object.fromEntries(parsedTranslations));
+-            return;
+-        }
+-        return super.addBuffer(normalizedPathName, buffer);
+-    }
+-    /**
+-     * Given data from a pass.json, reads them to bring them
+-     * into the current pass instance.
+-     *
+-     * @param data
+-     */
+-    [(_a = propsSymbol, _b = localizationSymbol, _c = passTypeSymbol, importMetadataSymbol)](data) {
+-        const possibleTypes = [
+-            "boardingPass",
+-            "coupon",
+-            "eventTicket",
+-            "storeCard",
+-            "generic",
+-        ];
+-        const type = possibleTypes.find((type) => Boolean(data[type]));
+-        const { boardingPass, coupon, storeCard, generic, eventTicket, ...otherPassData } = data;
+-        if (Object.keys(this[propsSymbol]).length) {
+-            console.warn(Messages.PASS_SOURCE.JOIN);
+-        }
+-        Object.assign(this[propsSymbol], otherPassData);
+-        if (!type) {
+-            if (!this[passTypeSymbol]) {
+-                console.warn(Messages.PASS_SOURCE.UNKNOWN_TYPE);
+-            }
+-        }
+-        else {
+-            this.type = type;
+-            const { headerFields = [], primaryFields = [], secondaryFields = [], auxiliaryFields = [], backFields = [], transitType, } = data[type] || {};
+-            this.headerFields.push(...headerFields);
+-            this.primaryFields.push(...primaryFields);
+-            this.secondaryFields.push(...secondaryFields);
+-            this.auxiliaryFields.push(...auxiliaryFields);
+-            this.backFields.push(...backFields);
+-            if (this.type === "boardingPass") {
+-                this.transitType = transitType;
+-            }
+-        }
+-    }
+-    /**
+-     * Creates the manifest starting from files
+-     * added to the bundle
+-     */
+-    [createManifestSymbol]() {
+-        const manifest = Object.entries(this[Bundle_1.filesSymbol]).reduce((acc, [fileName, buffer]) => ({
+-            ...acc,
+-            [fileName]: Signature.createHash(buffer),
+-        }), {});
+-        return buffer_1.Buffer.from(JSON.stringify(manifest));
+-    }
+-    /**
+-     * Applies the last validation checks against props,
+-     * applies the props to pass.json and creates l10n
+-     * files and folders and creates manifest and
+-     * signature files
+-     */
+-    [closePassSymbol]() {
+-        if (!this.type) {
+-            throw new TypeError(Messages.CLOSE.MISSING_TYPE);
+-        }
+-        const fileNames = Object.keys(this[Bundle_1.filesSymbol]);
+-        const passJson = buffer_1.Buffer.from(JSON.stringify(this[propsSymbol]));
+-        super.addBuffer("pass.json", passJson);
+-        if (!fileNames.some((fileName) => RegExps.PASS_ICON.test(fileName))) {
+-            console.warn(Messages.CLOSE.MISSING_ICON);
+-        }
+-        // *********************************** //
+-        // *** LOCALIZATION FILES CREATION *** //
+-        // *********************************** //
+-        const localizationEntries = Object.entries(this[localizationSymbol]);
+-        for (let i = localizationEntries.length - 1; i >= 0; i--) {
+-            const [lang, translations] = localizationEntries[i];
+-            const stringsFile = Strings.create(translations);
+-            if (stringsFile.length) {
+-                super.addBuffer(`${lang}.lproj/pass.strings`, stringsFile);
+-            }
+-        }
+-        // *********************** //
+-        // *** PERSONALIZATION *** //
+-        // *********************** //
+-        const meetsPersonalizationRequirements = Boolean(this[propsSymbol]["nfc"] &&
+-            this[Bundle_1.filesSymbol]["personalization.json"] &&
+-            fileNames.find((file) => RegExps.PERSONALIZATION.LOGO.test(file)));
+-        if (!meetsPersonalizationRequirements) {
+-            /**
+-             * Looking for every personalization file
+-             * and removing it
+-             */
+-            for (let i = 0; i < fileNames.length; i++) {
+-                if (fileNames[i].includes("personalization")) {
+-                    console.warn(Messages.format(Messages.CLOSE.PERSONALIZATION_REMOVED, fileNames[i]));
+-                    delete this[Bundle_1.filesSymbol][fileNames[i]];
+-                }
+-            }
+-        }
+-        // ******************************** //
+-        // *** BOARDING PASS VALIDATION *** //
+-        // ******************************** //
+-        if (this.type === "boardingPass" && !this.transitType) {
+-            throw new TypeError(Messages.CLOSE.MISSING_TRANSIT_TYPE);
+-        }
+-        // ****************************** //
+-        // *** SIGNATURE AND MANIFEST *** //
+-        // ****************************** //
+-        const manifestBuffer = this[createManifestSymbol]();
+-        super.addBuffer("manifest.json", manifestBuffer);
+-        const signatureBuffer = Signature.create(manifestBuffer, this[certificatesSymbol]);
+-        super.addBuffer("signature", signatureBuffer);
+-    }
+-    // ************************* //
+-    // *** EXPORTING METHODS *** //
+-    // ************************* //
+-    /**
+-     * Exports the pass as a zip buffer. When this method
+-     * is invoked, the bundle will get frozen and, thus,
+-     * no files will be allowed to be added any further.
+-     *
+-     * @returns
+-     */
+-    getAsBuffer() {
+-        if (!this.isFrozen) {
+-            this[closePassSymbol]();
+-        }
+-        return super.getAsBuffer();
+-    }
+-    /**
+-     * Exports the pass as a zip stream. When this method
+-     * is invoked, the bundle will get frozen and, thus,
+-     * no files will be allowed to be added any further.
+-     *
+-     * @returns
+-     */
+-    getAsStream() {
+-        if (!this.isFrozen) {
+-            this[closePassSymbol]();
+-        }
+-        return super.getAsStream();
+-    }
+-    /**
+-     * Exports the pass as a list of file paths and buffers.
+-     * When this method is invoked, the bundle will get
+-     * frozen and, thus, no files will be allowed to be
+-     * added any further.
+-     *
+-     * This allows developers to choose a different way
+-     * of serving, analyzing or zipping the file, outside the
+-     * default compression system.
+-     *
+-     * @returns a frozen object containing files paths as key
+-     * 		and Buffers as content.
+-     */
+-    getAsRaw() {
+-        if (!this.isFrozen) {
+-            this[closePassSymbol]();
+-        }
+-        return super.getAsRaw();
+-    }
+-    // ************************** //
+-    // *** DATA SETUP METHODS *** //
+-    // ************************** //
+-    /**
+-     * Allows to add a localization details to the
+-     * final bundle with some translations.
+-     *
+-     * If the language already exists, translations will be
+-     * merged with the existing ones.
+-     *
+-     * Setting `translations` to `null` fully deletes a language,
+-     * its translations and its files.
+-     *
+-     * @see https://developer.apple.com/documentation/walletpasses/creating_the_source_for_a_pass#3736718
+-     * @param lang
+-     * @param translations
+-     */
+-    localize(lang, translations) {
+-        var _d;
+-        var _e;
+-        Utils.assertUnfrozen(this);
+-        if (typeof lang !== "string") {
+-            throw new TypeError(Messages.format(Messages.LANGUAGES.INVALID_LANG, typeof lang));
+-        }
+-        if (translations === null) {
+-            delete this[localizationSymbol][lang];
+-            const allFilesKeys = Object.keys(this[Bundle_1.filesSymbol]);
+-            const langFolderIdentifier = `${lang}.lproj`;
+-            for (let i = allFilesKeys.length - 1; i >= 0; i--) {
+-                const filePath = allFilesKeys[i];
+-                if (filePath.startsWith(langFolderIdentifier)) {
+-                    delete this[Bundle_1.filesSymbol][filePath];
+-                }
+-            }
+-            return;
+-        }
+-        if (!translations || !Object.keys(translations).length) {
+-            console.warn(Messages.format(Messages.LANGUAGES.NO_TRANSLATIONS, lang));
+-            return;
+-        }
+-        (_d = (_e = this[localizationSymbol])[lang]) !== null && _d !== void 0 ? _d : (_e[lang] = {});
+-        if (typeof translations === "object" && !Array.isArray(translations)) {
+-            Object.assign(this[localizationSymbol][lang], translations);
+-        }
+-    }
+-    /**
+-     * Allows to specify an expiration date for the pass.
+-     *
+-     * Pass `null` to remove the expiration date.
+-     *
+-     * @param date
+-     * @throws if pass is frozen due to previous export
+-     * @returns
+-     */
+-    setExpirationDate(date) {
+-        Utils.assertUnfrozen(this);
+-        if (date === null) {
+-            delete this[propsSymbol]["expirationDate"];
+-            return;
+-        }
+-        try {
+-            this[propsSymbol]["expirationDate"] = Utils.processDate(date);
+-        }
+-        catch (err) {
+-            throw new TypeError(Messages.format(Messages.DATE.INVALID, "expirationDate", date));
+-        }
+-    }
+-    setBeacons(...beacons) {
+-        Utils.assertUnfrozen(this);
+-        if (beacons[0] === null) {
+-            delete this[propsSymbol]["beacons"];
+-            return;
+-        }
+-        this[propsSymbol]["beacons"] = Schemas.filterValid(Schemas.Beacon, beacons);
+-    }
+-    setLocations(...locations) {
+-        Utils.assertUnfrozen(this);
+-        if (locations[0] === null) {
+-            delete this[propsSymbol]["locations"];
+-            return;
+-        }
+-        this[propsSymbol]["locations"] = Schemas.filterValid(Schemas.Location, locations);
+-    }
+-    /**
+-     * Allows setting a relevant date in which the OS
+-     * should show this pass.
+-     *
+-     * Pass `null` to remove relevant date from this pass.
+-     *
+-     * @param {Date | null} date
+-     * @throws if pass is frozen due to previous export
+-     */
+-    setRelevantDate(date) {
+-        Utils.assertUnfrozen(this);
+-        if (date === null) {
+-            delete this[propsSymbol]["relevantDate"];
+-            return;
+-        }
+-        try {
+-            this[propsSymbol]["relevantDate"] = Utils.processDate(date);
+-        }
+-        catch (err) {
+-            throw new TypeError(Messages.format(Messages.DATE.INVALID, "relevantDate", date));
+-        }
+-    }
+-    setBarcodes(...barcodes) {
+-        Utils.assertUnfrozen(this);
+-        if (!barcodes.length) {
+-            return;
+-        }
+-        if (barcodes[0] === null) {
+-            delete this[propsSymbol]["barcodes"];
+-            return;
+-        }
+-        let finalBarcodes;
+-        if (typeof barcodes[0] === "string") {
+-            /**
+-             * A string has been received instead of objects. We can
+-             * only auto-fill them all with the same data.
+-             */
+-            const supportedFormats = [
+-                "PKBarcodeFormatQR",
+-                "PKBarcodeFormatPDF417",
+-                "PKBarcodeFormatAztec",
+-                "PKBarcodeFormatCode128",
+-            ];
+-            finalBarcodes = supportedFormats.map((format) => Schemas.validate(Schemas.Barcode, {
+-                format,
+-                message: barcodes[0],
+-            }));
+-        }
+-        else {
+-            finalBarcodes = Schemas.filterValid(Schemas.Barcode, barcodes);
+-        }
+-        this[propsSymbol]["barcodes"] = finalBarcodes;
+-    }
+-    /**
+-     * Allows to specify details to make this, an
+-     * NFC-capable pass.
+-     *
+-     * Pass `null` as parameter to remove it at all.
+-     *
+-     * @see https://developer.apple.com/documentation/walletpasses/pass/nfc
+-     * @param data
+-     * @throws if pass is frozen due to previous export
+-     * @returns
+-     */
+-    setNFC(nfc) {
+-        var _d;
+-        Utils.assertUnfrozen(this);
+-        if (nfc === null) {
+-            delete this[propsSymbol]["nfc"];
+-            return;
+-        }
+-        this[propsSymbol]["nfc"] =
+-            (_d = Schemas.validate(Schemas.NFC, nfc)) !== null && _d !== void 0 ? _d : undefined;
+-    }
+-}
+-exports.default = PKPass;
+-function validateJSONBuffer(buffer, schema) {
+-    let contentAsJSON;
+-    try {
+-        contentAsJSON = JSON.parse(buffer.toString("utf8"));
+-    }
+-    catch (err) {
+-        throw new TypeError(Messages.JSON.INVALID);
+-    }
+-    return Schemas.validate(schema, contentAsJSON);
+-}
+-//# sourceMappingURL=PKPass.js.map
+\ No newline at end of file
+diff --git a/lib/Signature.d.ts b/lib/Signature.d.ts
+index 577cb9bd75081c07a1ebad92afdc97e7a38dd6f9..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/Signature.d.ts
++++ b/lib/Signature.d.ts
+@@ -1,19 +0,0 @@
+-/// <reference types="node" />
+-import type * as Schemas from "./schemas";
+-import { Buffer } from "buffer";
+-/**
+- * Creates an hash for a buffer. Used by manifest
+- *
+- * @param buffer
+- * @returns
+- */
+-export declare function createHash(buffer: Buffer): string;
+-/**
+- * Generates the PKCS #7 cryptografic signature for the manifest file.
+- *
+- * @method create
+- * @params manifest
+- * @params certificates
+- * @returns
+- */
+-export declare function create(manifestBuffer: Buffer, certificates: Schemas.CertificatesSchema): Buffer;
+diff --git a/lib/Signature.js b/lib/Signature.js
+index df4ae69295e2b12d7e0de934b0399d3b9e5594ab..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/Signature.js
++++ b/lib/Signature.js
+@@ -1,102 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.create = exports.createHash = void 0;
+-const tslib_1 = require("tslib");
+-const node_forge_1 = tslib_1.__importDefault(require("node-forge"));
+-const buffer_1 = require("buffer");
+-/**
+- * Creates an hash for a buffer. Used by manifest
+- *
+- * @param buffer
+- * @returns
+- */
+-function createHash(buffer) {
+-    const hashFlow = node_forge_1.default.md.sha1.create();
+-    hashFlow.update(buffer.toString("binary"));
+-    return hashFlow.digest().toHex();
+-}
+-exports.createHash = createHash;
+-/**
+- * Generates the PKCS #7 cryptografic signature for the manifest file.
+- *
+- * @method create
+- * @params manifest
+- * @params certificates
+- * @returns
+- */
+-function create(manifestBuffer, certificates) {
+-    const signature = node_forge_1.default.pkcs7.createSignedData();
+-    signature.content = new node_forge_1.default.util.ByteStringBuffer(manifestBuffer);
+-    const { wwdr, signerCert, signerKey } = parseCertificates(getStringCertificates(certificates));
+-    signature.addCertificate(wwdr);
+-    signature.addCertificate(signerCert);
+-    /**
+-     * authenticatedAttributes belong to PKCS#9 standard.
+-     * It requires at least 2 values:
+-     * • content-type (which is a PKCS#7 oid) and
+-     * • message-digest oid.
+-     *
+-     * Wallet requires a signingTime.
+-     */
+-    signature.addSigner({
+-        key: signerKey,
+-        certificate: signerCert,
+-        digestAlgorithm: node_forge_1.default.pki.oids.sha1,
+-        authenticatedAttributes: [
+-            {
+-                type: node_forge_1.default.pki.oids.contentType,
+-                value: node_forge_1.default.pki.oids.data,
+-            },
+-            {
+-                type: node_forge_1.default.pki.oids.messageDigest,
+-            },
+-            {
+-                type: node_forge_1.default.pki.oids.signingTime,
+-            },
+-        ],
+-    });
+-    /**
+-     * We are creating a detached signature because we don't need the signed content.
+-     * Detached signature is a property of PKCS#7 cryptography standard.
+-     */
+-    signature.sign({ detached: true });
+-    /**
+-     * Signature here is an ASN.1 valid structure (DER-compliant).
+-     * Generating a non-detached signature, would have pushed inside signature.contentInfo
+-     * (which has type 16, or "SEQUENCE", and is an array) a Context-Specific element, with the
+-     * signed content as value.
+-     *
+-     * In fact the previous approach was to generating a detached signature and the pull away the generated
+-     * content.
+-     *
+-     * That's what happens when you copy a fu****g line without understanding what it does.
+-     * Well, nevermind, it was funny to study BER, DER, CER, ASN.1 and PKCS#7. You can learn a lot
+-     * of beautiful things. ¯\_(ツ)_/¯
+-     */
+-    return buffer_1.Buffer.from(node_forge_1.default.asn1.toDer(signature.toAsn1()).getBytes(), "binary");
+-}
+-exports.create = create;
+-/**
+- * Parses the PEM-formatted passed text (certificates)
+- *
+- * @param element - Text content of .pem files
+- * @param passphrase - passphrase for the key
+- * @returns The parsed certificate or key in node forge format
+- */
+-function parseCertificates(certificates) {
+-    const { signerCert, signerKey, wwdr, signerKeyPassphrase } = certificates;
+-    return {
+-        signerCert: node_forge_1.default.pki.certificateFromPem(signerCert.toString("utf-8")),
+-        wwdr: node_forge_1.default.pki.certificateFromPem(wwdr.toString("utf-8")),
+-        signerKey: node_forge_1.default.pki.decryptRsaPrivateKey(signerKey.toString("utf-8"), signerKeyPassphrase),
+-    };
+-}
+-function getStringCertificates(certificates) {
+-    return {
+-        signerKeyPassphrase: certificates.signerKeyPassphrase,
+-        wwdr: buffer_1.Buffer.from(certificates.wwdr).toString("utf-8"),
+-        signerCert: buffer_1.Buffer.from(certificates.signerCert).toString("utf-8"),
+-        signerKey: buffer_1.Buffer.from(certificates.signerKey).toString("utf-8"),
+-    };
+-}
+-//# sourceMappingURL=Signature.js.map
+\ No newline at end of file
+diff --git a/lib/StringsUtils.d.ts b/lib/StringsUtils.d.ts
+index 2e5623a4e80bd7bfd401e9d8c417b26d27a825c1..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/StringsUtils.d.ts
++++ b/lib/StringsUtils.d.ts
+@@ -1,22 +0,0 @@
+-/// <reference types="node" />
+-import { Buffer } from "buffer";
+-/**
+- * Parses a string file to convert it to
+- * an object
+- *
+- * @param buffer
+- * @returns
+- */
+-export declare function parse(buffer: Buffer): {
+-    translations: [placeholder: string, value: string][];
+-    comments: string[];
+-};
+-/**
+- * Creates a strings file buffer
+- *
+- * @param translations
+- * @returns
+- */
+-export declare function create(translations: {
+-    [key: string]: string;
+-}): Buffer;
+diff --git a/lib/StringsUtils.js b/lib/StringsUtils.js
+index 979bdc979d555130951788028ac92433f71a12cc..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/StringsUtils.js
++++ b/lib/StringsUtils.js
+@@ -1,70 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.create = exports.parse = void 0;
+-const os_1 = require("os");
+-const buffer_1 = require("buffer");
+-// ************************************ //
+-// *** UTILS FOR PASS.STRINGS FILES *** //
+-// ************************************ //
+-/**
+- * Parses a string file to convert it to
+- * an object
+- *
+- * @param buffer
+- * @returns
+- */
+-function parse(buffer) {
+-    const fileAsString = buffer.toString("utf8");
+-    const translationRowRegex = /"(?<key>.+)"\s+=\s+"(?<value>.+)";\n?/;
+-    const commentRowRegex = /\/\*\s*(.+)\s*\*\//;
+-    let translations = [];
+-    let comments = [];
+-    let blockStartPoint = 0;
+-    let blockEndPoint = 0;
+-    do {
+-        if (
+-        /** New Line, new life */
+-        /\n/.test(fileAsString[blockEndPoint]) ||
+-            /** EOF  */
+-            blockEndPoint === fileAsString.length) {
+-            let match;
+-            const section = fileAsString.substring(blockStartPoint, blockEndPoint + 1);
+-            if ((match = section.match(translationRowRegex)) && match.groups) {
+-                const { groups: { key, value }, } = match;
+-                translations.push([key, value]);
+-            }
+-            else if ((match = section.match(commentRowRegex))) {
+-                const [, content] = match;
+-                comments.push(content.trimEnd());
+-            }
+-            /** Skipping \n and going to the next block. */
+-            blockEndPoint += 2;
+-            blockStartPoint = blockEndPoint - 1;
+-        }
+-        else {
+-            blockEndPoint += 1;
+-        }
+-    } while (blockEndPoint <= fileAsString.length);
+-    return {
+-        translations,
+-        comments,
+-    };
+-}
+-exports.parse = parse;
+-/**
+- * Creates a strings file buffer
+- *
+- * @param translations
+- * @returns
+- */
+-function create(translations) {
+-    const stringContents = [];
+-    const translationsEntries = Object.entries(translations);
+-    for (let i = 0; i < translationsEntries.length; i++) {
+-        const [key, value] = translationsEntries[i];
+-        stringContents.push(`"${key}" = "${value}";`);
+-    }
+-    return buffer_1.Buffer.from(stringContents.join(os_1.EOL));
+-}
+-exports.create = create;
+-//# sourceMappingURL=StringsUtils.js.map
+\ No newline at end of file
+diff --git a/lib/getModelFolderContents.d.ts b/lib/getModelFolderContents.d.ts
+index a7b2072f54e33dc4c08a874758b3e5641dc58bed..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/getModelFolderContents.d.ts
++++ b/lib/getModelFolderContents.d.ts
+@@ -1,12 +0,0 @@
+-/// <reference types="node" />
+-import type { Buffer } from "buffer";
+-/**
+- * Reads the model folder contents
+- *
+- * @param model
+- * @returns A promise of an object containing all
+- * 		filePaths and the relative buffer
+- */
+-export default function getModelFolderContents(model: string): Promise<{
+-    [filePath: string]: Buffer;
+-}>;
+diff --git a/lib/getModelFolderContents.js b/lib/getModelFolderContents.js
+index 17a8fe2f9a6aca53b746bfaa3b884937fff4d8a3..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/getModelFolderContents.js
++++ b/lib/getModelFolderContents.js
+@@ -1,91 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-const tslib_1 = require("tslib");
+-const path = tslib_1.__importStar(require("path"));
+-const Utils = tslib_1.__importStar(require("./utils"));
+-const Messages = tslib_1.__importStar(require("./messages"));
+-const fs_1 = require("fs");
+-/**
+- * Reads the model folder contents
+- *
+- * @param model
+- * @returns A promise of an object containing all
+- * 		filePaths and the relative buffer
+- */
+-async function getModelFolderContents(model) {
+-    try {
+-        const modelPath = `${model}${(!path.extname(model) && ".pass") || ""}`;
+-        const modelFilesList = await fs_1.promises.readdir(modelPath);
+-        // No dot-starting files, manifest and signature and only files with an extension
+-        const modelSuitableRootPaths = Utils.removeHidden(modelFilesList).filter((f) => !/(manifest|signature)/i.test(f) &&
+-            /.+$/.test(path.parse(f).ext));
+-        const modelRecords = await Promise.all(modelSuitableRootPaths.map((fileOrDirectoryPath) => readFileOrDirectory(path.resolve(modelPath, fileOrDirectoryPath))));
+-        return Object.fromEntries(modelRecords.flat(1));
+-    }
+-    catch (err) {
+-        if (!isErrorErrNoException(err) || !isMissingFileError(err)) {
+-            throw err;
+-        }
+-        if (isFileReadingFailure(err)) {
+-            throw new Error(Messages.format(Messages.MODELS.FILE_NO_OPEN, JSON.stringify(err)));
+-        }
+-        if (isDirectoryReadingFailure(err)) {
+-            throw new Error(Messages.format(Messages.MODELS.DIR_NOT_FOUND, err.path));
+-        }
+-        throw err;
+-    }
+-}
+-exports.default = getModelFolderContents;
+-function isErrorErrNoException(err) {
+-    return Object.prototype.hasOwnProperty.call(err, "errno");
+-}
+-function isMissingFileError(err) {
+-    return err.code === "ENOENT";
+-}
+-function isDirectoryReadingFailure(err) {
+-    return err.syscall === "scandir";
+-}
+-function isFileReadingFailure(err) {
+-    return err.syscall === "open";
+-}
+-/**
+- * Allows reading both a whole directory or a set of
+- * file in the same flow
+- *
+- * @param filePath
+- * @returns
+- */
+-async function readFileOrDirectory(filePath) {
+-    const stats = await fs_1.promises.lstat(filePath);
+-    if (stats.isDirectory()) {
+-        return readFilesInDirectory(filePath);
+-    }
+-    else {
+-        return getFileContents(filePath).then((result) => [result]);
+-    }
+-}
+-/**
+- * Reads a directory and returns all
+- * the files in it
+- *
+- * @param filePath
+- * @returns
+- */
+-async function readFilesInDirectory(filePath) {
+-    const dirContent = await fs_1.promises.readdir(filePath).then(Utils.removeHidden);
+-    return Promise.all(dirContent.map((fileName) => getFileContents(path.resolve(filePath, fileName), 2)));
+-}
+-/**
+- * @param filePath
+- * @param pathSlicesDepthFromEnd used to preserve localization lproj content
+- * @returns
+- */
+-async function getFileContents(filePath, pathSlicesDepthFromEnd = 1) {
+-    const fileComponents = filePath.split(path.sep);
+-    const fileName = fileComponents
+-        .slice(fileComponents.length - pathSlicesDepthFromEnd)
+-        .join("/");
+-    const content = await fs_1.promises.readFile(filePath);
+-    return [fileName, content];
+-}
+-//# sourceMappingURL=getModelFolderContents.js.map
+\ No newline at end of file
+diff --git a/lib/index.d.ts b/lib/index.d.ts
+index b44712ea191d071fe75e17721794136f5cfbaf92..eefff8c5a53eab6c7856d9d0f9b20f7ef0ae9aeb 100644
+--- a/lib/index.d.ts
++++ b/lib/index.d.ts
+@@ -1,2 +1,704 @@
+-export { default as PKPass } from "./PKPass";
+-export type { Barcode, Beacon, Field, Location, NFC, PassProps, Semantics, TransitType, Personalize, OverridablePassProps, } from "./schemas";
++import { Stream } from 'node:stream';
++import { Buffer as Buffer$1 } from 'buffer';
++import Joi from 'joi';
++
++declare const filesSymbol: unique symbol;
++declare const freezeSymbol: unique symbol;
++declare const mimeTypeSymbol: unique symbol;
++declare namespace Mime {
++    type type = string;
++    type subtype = string;
++}
++/**
++ * Defines a container ready to be distributed.
++ * If no mimeType is passed to the constructor,
++ * it will throw an error.
++ */
++declare class Bundle {
++    private [filesSymbol];
++    private [mimeTypeSymbol];
++    constructor(mimeType: `${Mime.type}/${Mime.subtype}`);
++    /**
++     * Creates a bundle and exposes the
++     * function to freeze it manually once
++     * completed.
++     *
++     * This was made to not expose freeze
++     * function outside of Bundle class.
++     *
++     * Normally, a bundle would get freezed
++     * when using getAsBuffer or getAsStream
++     * but when creating a PKPasses archive,
++     * we need to freeze the bundle so the
++     * user cannot add more files (we want to
++     * allow them to only the selected files)
++     * but also letting them choose how to
++     * export it.
++     *
++     * @param mimeType
++     * @returns
++     */
++    static freezable(mimeType: `${Mime.type}/${Mime.subtype}`): [Bundle, Function];
++    /**
++     * Retrieves bundle's mimeType
++     */
++    get mimeType(): string;
++    /**
++     * Freezes the bundle so no more files
++     * can be added any further.
++     */
++    private [freezeSymbol];
++    /**
++     * Tells if this bundle still allows files to be added.
++     * @returns false if files are allowed, true otherwise
++     */
++    get isFrozen(): boolean;
++    /**
++     * Returns a copy of the current list of buffers
++     * that have been added to the class.
++     *
++     * It does not include translation files, manifest
++     * and signature.
++     *
++     * Final files list might differ due to export
++     * conditions.
++     */
++    get files(): string[];
++    /**
++     * Allows files to be added to the bundle.
++     * If the bundle is closed, it will throw an error.
++     *
++     * @param fileName
++     * @param buffer
++     */
++    addBuffer(fileName: string, buffer: Buffer): void;
++    /**
++     * Closes the bundle and returns it as a Buffer.
++     * Once closed, the bundle does not allow files
++     * to be added any further.
++     *
++     * @returns Buffer
++     */
++    getAsBuffer(): Buffer;
++    /**
++     * Closes the bundle and returns it as a stream.
++     * Once closed, the bundle does not allow files
++     * to be added any further.
++     *
++     * @returns
++     */
++    getAsStream(): Stream;
++    /**
++     * Closes the bundle and returns it as an object.
++     * This allows developers to choose a different way
++     * of serving, analyzing or zipping the file, outside the
++     * default compression system.
++     *
++     * @returns a frozen object containing files paths as key
++     * 		and Buffers as content.
++     */
++    getAsRaw(): {
++        [filePath: string]: Buffer;
++    };
++}
++
++/**
++ * @see https://developer.apple.com/documentation/walletpasses/pass/barcodes
++ */
++type BarcodeFormat = "PKBarcodeFormatQR" | "PKBarcodeFormatPDF417" | "PKBarcodeFormatAztec" | "PKBarcodeFormatCode128";
++interface Barcode {
++    altText?: string;
++    messageEncoding?: string;
++    format: BarcodeFormat;
++    message: string;
++}
++declare const Barcode: Joi.ObjectSchema<Barcode>;
++
++/**
++ * @see https://developer.apple.com/documentation/walletpasses/pass/beacons
++ */
++interface Beacon {
++    major?: number;
++    minor?: number;
++    relevantText?: string;
++    proximityUUID: string;
++}
++declare const Beacon: Joi.ObjectSchema<Beacon>;
++
++/**
++ * @see https://developer.apple.com/documentation/walletpasses/pass/locations
++ */
++interface Location {
++    relevantText?: string;
++    altitude?: number;
++    latitude: number;
++    longitude: number;
++}
++declare const Location: Joi.ObjectSchema<Location>;
++
++/**
++ * For a better description of every single field,
++ * please refer to Apple official documentation.
++ *
++ * @see https://developer.apple.com/documentation/walletpasses/semantictags
++ */
++/**
++ * @see https://developer.apple.com/documentation/walletpasses/semantictagtype
++ */
++declare namespace SemanticTagType {
++    interface PersonNameComponents {
++        familyName?: string;
++        givenName?: string;
++        middleName?: string;
++        namePrefix?: string;
++        nameSuffix?: string;
++        nickname?: string;
++        phoneticRepresentation?: string;
++    }
++    interface CurrencyAmount {
++        currencyCode?: string;
++        amount?: string;
++    }
++    interface Location {
++        latitude: number;
++        longitude: number;
++    }
++    interface Seat {
++        seatSection?: string;
++        seatRow?: string;
++        seatNumber?: string;
++        seatIdentifier?: string;
++        seatType?: string;
++        seatDescription?: string;
++    }
++    interface WifiNetwork {
++        password: string;
++        ssid: string;
++    }
++}
++/**
++ * Alphabetical order
++ * @see https://developer.apple.com/documentation/walletpasses/semantictags
++ */
++interface Semantics {
++    airlineCode?: string;
++    artistIDs?: string[];
++    awayTeamAbbreviation?: string;
++    awayTeamLocation?: string;
++    awayTeamName?: string;
++    balance?: SemanticTagType.CurrencyAmount;
++    boardingGroup?: string;
++    boardingSequenceNumber?: string;
++    carNumber?: string;
++    confirmationNumber?: string;
++    currentArrivalDate?: string;
++    currentBoardingDate?: string;
++    currentDepartureDate?: string;
++    departureAirportCode?: string;
++    departureAirportName?: string;
++    departureGate?: string;
++    departureLocation?: SemanticTagType.Location;
++    departureLocationDescription?: string;
++    departurePlatform?: string;
++    departureStationName?: string;
++    departureTerminal?: string;
++    destinationAirportCode?: string;
++    destinationAirportName?: string;
++    destinationGate?: string;
++    destinationLocation?: SemanticTagType.Location;
++    destinationLocationDescription?: string;
++    destinationPlatform?: string;
++    destinationStationName?: string;
++    destinationTerminal?: string;
++    duration?: number;
++    eventEndDate?: string;
++    eventName?: string;
++    eventStartDate?: string;
++    eventType?: "PKEventTypeGeneric" | "PKEventTypeLivePerformance" | "PKEventTypeMovie" | "PKEventTypeSports" | "PKEventTypeConference" | "PKEventTypeConvention" | "PKEventTypeWorkshop" | "PKEventTypeSocialGathering";
++    flightCode?: string;
++    flightNumber?: number;
++    genre?: string;
++    homeTeamAbbreviation?: string;
++    homeTeamLocation?: string;
++    homeTeamName?: string;
++    leagueAbbreviation?: string;
++    leagueName?: string;
++    membershipProgramName?: string;
++    membershipProgramNumber?: string;
++    originalArrivalDate?: string;
++    originalBoardingDate?: string;
++    originalDepartureDate?: string;
++    passengerName?: SemanticTagType.PersonNameComponents;
++    performerNames?: string[];
++    priorityStatus?: string;
++    seats?: SemanticTagType.Seat[];
++    securityScreening?: string;
++    silenceRequested?: boolean;
++    sportName?: string;
++    totalPrice?: SemanticTagType.CurrencyAmount;
++    transitProvider?: string;
++    transitStatus?: string;
++    transitStatusReason?: string;
++    vehicleName?: string;
++    vehicleNumber?: string;
++    vehicleType?: string;
++    venueEntrance?: string;
++    venueLocation?: SemanticTagType.Location;
++    venueName?: string;
++    venuePhoneNumber?: string;
++    venueRoom?: string;
++    wifiAccess?: SemanticTagType.WifiNetwork[];
++}
++declare const Semantics: Joi.ObjectSchema<Semantics>;
++
++type PKDataDetectorType = "PKDataDetectorTypePhoneNumber" | "PKDataDetectorTypeLink" | "PKDataDetectorTypeAddress" | "PKDataDetectorTypeCalendarEvent";
++type PKTextAlignmentType = "PKTextAlignmentLeft" | "PKTextAlignmentCenter" | "PKTextAlignmentRight" | "PKTextAlignmentNatural";
++type PKDateStyleType = "PKDateStyleNone" | "PKDateStyleShort" | "PKDateStyleMedium" | "PKDateStyleLong" | "PKDateStyleFull";
++type PKNumberStyleType = "PKNumberStyleDecimal" | "PKNumberStylePercent" | "PKNumberStyleScientific" | "PKNumberStyleSpellOut";
++/**
++ * @see https://developer.apple.com/documentation/walletpasses/passfieldcontent
++ */
++interface Field {
++    attributedValue?: string | number | Date;
++    changeMessage?: string;
++    dataDetectorTypes?: PKDataDetectorType[];
++    label?: string;
++    textAlignment?: PKTextAlignmentType;
++    key: string;
++    value: string | number | Date;
++    semantics?: Semantics;
++    dateStyle?: PKDateStyleType;
++    ignoresTimeZone?: boolean;
++    isRelative?: boolean;
++    timeStyle?: string;
++    currencyCode?: string;
++    numberStyle?: PKNumberStyleType;
++}
++declare const Field: Joi.ObjectSchema<Field>;
++interface FieldWithRow extends Field {
++    row?: 0 | 1;
++}
++declare const FieldWithRow: Joi.ObjectSchema<Field>;
++
++/**
++ * @see https://developer.apple.com/documentation/walletpasses/pass/nfc
++ */
++interface NFC {
++    message: string;
++    encryptionPublicKey: string;
++    requiresAuthentication?: boolean;
++}
++declare const NFC: Joi.ObjectSchema<NFC>;
++
++type TransitType = "PKTransitTypeAir" | "PKTransitTypeBoat" | "PKTransitTypeBus" | "PKTransitTypeGeneric" | "PKTransitTypeTrain";
++declare const TransitType: Joi.StringSchema;
++interface PassFields {
++    auxiliaryFields: FieldWithRow[];
++    backFields: Field[];
++    headerFields: Field[];
++    primaryFields: Field[];
++    secondaryFields: Field[];
++    transitType?: TransitType;
++}
++declare const PassFields: Joi.ObjectSchema<PassFields>;
++
++/**
++ * @see https://developer.apple.com/documentation/walletpasses/personalize
++ */
++type RequiredPersonalizationFields = "PKPassPersonalizationFieldName" | "PKPassPersonalizationFieldPostalCode" | "PKPassPersonalizationFieldEmailAddress" | "PKPassPersonalizationFieldPhoneNumber";
++interface Personalize {
++    description: string;
++    requiredPersonalizationFields: RequiredPersonalizationFields[];
++    termsAndConditions?: string;
++}
++declare const Personalize: Joi.ObjectSchema<Personalize>;
++
++interface CertificatesSchema {
++    wwdr: string | Buffer$1;
++    signerCert: string | Buffer$1;
++    signerKey: string | Buffer$1;
++    signerKeyPassphrase?: string;
++}
++declare const CertificatesSchema: Joi.ObjectSchema<CertificatesSchema>;
++
++interface FileBuffers {
++    [key: string]: Buffer$1;
++}
++/**
++ * These are the properties passkit-generator will
++ * handle through its methods
++ */
++type PassMethodsProps = "nfc" | "beacons" | "barcodes" | "relevantDate" | "expirationDate" | "locations";
++type PassTypesProps = "boardingPass" | "eventTicket" | "coupon" | "generic" | "storeCard";
++type PassPropsFromMethods = {
++    [K in PassMethodsProps]: PassProps[K];
++};
++declare const PassPropsFromMethods: Joi.ObjectSchema<PassPropsFromMethods>;
++type PassKindsProps = {
++    [K in PassTypesProps]: PassProps[K];
++};
++declare const PassKindsProps: Joi.ObjectSchema<PassKindsProps>;
++type OverridablePassProps = Omit<PassProps, PassMethodsProps | PassTypesProps>;
++declare const OverridablePassProps: Joi.ObjectSchema<OverridablePassProps>;
++interface PassProps {
++    formatVersion?: 1;
++    serialNumber?: string;
++    description?: string;
++    organizationName?: string;
++    passTypeIdentifier?: string;
++    teamIdentifier?: string;
++    appLaunchURL?: string;
++    voided?: boolean;
++    userInfo?: {
++        [key: string]: any;
++    };
++    sharingProhibited?: boolean;
++    groupingIdentifier?: string;
++    suppressStripShine?: boolean;
++    logoText?: string;
++    maxDistance?: number;
++    semantics?: Semantics;
++    webServiceURL?: string;
++    associatedStoreIdentifiers?: Array<number>;
++    authenticationToken?: string;
++    backgroundColor?: string;
++    foregroundColor?: string;
++    labelColor?: string;
++    nfc?: NFC;
++    beacons?: Beacon[];
++    barcodes?: Barcode[];
++    relevantDate?: string;
++    expirationDate?: string;
++    locations?: Location[];
++    boardingPass?: PassFields & {
++        transitType: TransitType;
++    };
++    eventTicket?: PassFields;
++    coupon?: PassFields;
++    generic?: PassFields;
++    storeCard?: PassFields;
++}
++declare const PassProps: Joi.ObjectSchema<OverridablePassProps & PassKindsProps & PassPropsFromMethods>;
++interface Template {
++    model: string;
++    certificates?: CertificatesSchema;
++}
++declare const Template: Joi.ObjectSchema<Template>;
++
++declare const propsSymbol: unique symbol;
++declare const localizationSymbol: unique symbol;
++declare const importMetadataSymbol: unique symbol;
++declare const createManifestSymbol: unique symbol;
++declare const closePassSymbol: unique symbol;
++declare const passTypeSymbol: unique symbol;
++declare const certificatesSymbol: unique symbol;
++declare class PKPass extends Bundle {
++    private [certificatesSymbol];
++    private [propsSymbol];
++    private [localizationSymbol];
++    private [passTypeSymbol];
++    /**
++     * Either create a pass from another one
++     * or a disk path.
++     *
++     * @param source
++     * @returns
++     */
++    static from<S extends PKPass | Template>(source: S, props?: OverridablePassProps): Promise<PKPass>;
++    /**
++     * Creates a Bundle made of PKPass to be distributed
++     * as a `.pkpasses` zip file. Returns a Bundle instance
++     * so it can be outputted both as stream or as a buffer.
++     *
++     * Using this will freeze all the instances passed as
++     * parameter.
++     *
++     * Throws if not all the files are instance of PKPass.
++     *
++     * @param passes
++     */
++    static pack(...passes: PKPass[]): Bundle;
++    constructor(buffers?: FileBuffers, certificates?: CertificatesSchema, props?: OverridablePassProps);
++    /**
++     * Allows changing the certificates, if needed.
++     * They are actually expected to be received in
++     * the constructor, but they can get overridden
++     * here for whatever purpose.
++     *
++     * When using this setter, all certificates are
++     * expected to be received, or an exception will
++     * be thrown.
++     *
++     * @param certs
++     */
++    set certificates(certs: CertificatesSchema);
++    /**
++     * Allows retrieving current languages
++     */
++    get languages(): string[];
++    /**
++     * Allows getting an image of the props
++     * that are composing your pass instance.
++     */
++    get props(): PassProps;
++    /**
++     * Allows setting a transitType property
++     * for a boardingPass.
++     *
++     * @throws if current type is not "boardingPass".
++     * @param value
++     */
++    set transitType(value: TransitType);
++    /**
++     * Allows getting the current transitType
++     * from pass props.
++     *
++     * @throws (automatically) if current type is not "boardingPass".
++     */
++    get transitType(): TransitType;
++    /**
++     * Allows accessing to primaryFields object.
++     *
++     * @throws (automatically) if no valid pass.json
++     * 		has been parsed yet or, anyway, if current
++     * 		instance has not a valid type set yet.
++     */
++    get primaryFields(): Field[];
++    /**
++     * Allows accessing to secondaryFields object
++     *
++     * @throws (automatically) if no valid pass.json
++     * 		has been parsed yet or, anyway, if current
++     * 		instance has not a valid type set yet.
++     */
++    get secondaryFields(): Field[];
++    /**
++     * Allows accessing to auxiliaryFields object
++     *
++     * For Typescript users: this signature allows
++     * in any case to add the 'row' field, but on
++     * runtime they are only allowed on "eventTicket"
++     * passes.
++     *
++     * @throws (automatically) if no valid pass.json
++     * 		has been parsed yet or, anyway, if current
++     * 		instance has not a valid type set yet.
++     */
++    get auxiliaryFields(): FieldWithRow[];
++    /**
++     * Allows accessing to headerFields object
++     *
++     * @throws (automatically) if no valid pass.json
++     * 		has been parsed yet or, anyway, if current
++     * 		instance has not a valid type set yet.
++     */
++    get headerFields(): Field[];
++    /**
++     * Allows accessing to backFields object
++     *
++     * @throws (automatically) if no valid pass.json
++     * 		has been parsed yet or, anyway, if current
++     * 		instance has not a valid type set yet.
++     */
++    get backFields(): Field[];
++    /**
++     * Allows setting a pass type.
++     *
++     * **Warning**: setting a type with this setter,
++     * will reset all the fields (primaryFields,
++     * secondaryFields, headerFields, auxiliaryFields, backFields),
++     * both imported or manually set.
++     */
++    set type(nextType: PassTypesProps | undefined);
++    get type(): PassTypesProps | undefined;
++    /**
++     * Allows adding a new asset inside the pass / bundle with
++     * the following exceptions:
++     *
++     * - Empty buffers are ignored;
++     * - `manifest.json` and `signature` files will be ignored;
++     * - `pass.json` will be read validated and merged in the
++     * 	current instance, if it wasn't added previously.
++     * 	It's properties will overwrite the instance ones.
++     * 	You might loose data;
++     * - `pass.strings` files will be read, parsed and merged
++     * 	with the current translations. Comments will be ignored;
++     * - `personalization.json` will be read, validated and added.
++     * 	They will be stripped out when exporting the pass if
++     * 	it won't have NFC details or if any of the personalization
++     * 	files is missing;
++     *
++     * @param pathName
++     * @param buffer
++     */
++    addBuffer(pathName: string, buffer: Buffer$1): void;
++    /**
++     * Given data from a pass.json, reads them to bring them
++     * into the current pass instance.
++     *
++     * @param data
++     */
++    private [importMetadataSymbol];
++    /**
++     * Creates the manifest starting from files
++     * added to the bundle
++     */
++    private [createManifestSymbol];
++    /**
++     * Applies the last validation checks against props,
++     * applies the props to pass.json and creates l10n
++     * files and folders and creates manifest and
++     * signature files
++     */
++    private [closePassSymbol];
++    /**
++     * Exports the pass as a zip buffer. When this method
++     * is invoked, the bundle will get frozen and, thus,
++     * no files will be allowed to be added any further.
++     *
++     * @returns
++     */
++    getAsBuffer(): Buffer$1;
++    /**
++     * Exports the pass as a zip stream. When this method
++     * is invoked, the bundle will get frozen and, thus,
++     * no files will be allowed to be added any further.
++     *
++     * @returns
++     */
++    getAsStream(): Stream;
++    /**
++     * Exports the pass as a list of file paths and buffers.
++     * When this method is invoked, the bundle will get
++     * frozen and, thus, no files will be allowed to be
++     * added any further.
++     *
++     * This allows developers to choose a different way
++     * of serving, analyzing or zipping the file, outside the
++     * default compression system.
++     *
++     * @returns a frozen object containing files paths as key
++     * 		and Buffers as content.
++     */
++    getAsRaw(): {
++        [filePath: string]: Buffer$1;
++    };
++    /**
++     * Allows to add a localization details to the
++     * final bundle with some translations.
++     *
++     * If the language already exists, translations will be
++     * merged with the existing ones.
++     *
++     * Setting `translations` to `null` fully deletes a language,
++     * its translations and its files.
++     *
++     * @see https://developer.apple.com/documentation/walletpasses/creating_the_source_for_a_pass#3736718
++     * @param lang
++     * @param translations
++     */
++    localize(lang: string, translations: {
++        [key: string]: string;
++    } | null): void;
++    /**
++     * Allows to specify an expiration date for the pass.
++     *
++     * Pass `null` to remove the expiration date.
++     *
++     * @param date
++     * @throws if pass is frozen due to previous export
++     * @returns
++     */
++    setExpirationDate(date: Date | null): void;
++    /**
++     * Allows setting some beacons the OS should
++     * react to and show this pass.
++     *
++     * Pass `null` to remove them at all.
++     *
++     * @example
++     * ```ts
++     *		PKPassInstance.setBeacons(null)
++     *		PKPassInstance.setBeacons({
++     *			proximityUUID: "00000-000000-0000-00000000000",
++     *		});
++     * ```
++     *
++     * @see https://developer.apple.com/documentation/walletpasses/pass/beacons
++     * @param beacons
++     * @throws if pass is frozen due to previous export
++     * @returns
++     */
++    setBeacons(beacons: null): void;
++    setBeacons(...beacons: Beacon[]): void;
++    /**
++     * Allows setting some locations the OS should
++     * react to and show this pass.
++     *
++     * Pass `null` to remove them at all.
++     *
++     * @example
++     * ```ts
++     *		PKPassInstance.setLocations(null)
++     *		PKPassInstance.setLocations({
++     *			latitude: 0.5333245342
++     *			longitude: 0.2135332252
++     *		});
++     * ```
++     *
++     * @see https://developer.apple.com/documentation/walletpasses/pass/locations
++     * @param locations
++     * @throws if pass is frozen due to previous export
++     * @returns
++     */
++    setLocations(locations: null): void;
++    setLocations(...locations: Location[]): void;
++    /**
++     * Allows setting a relevant date in which the OS
++     * should show this pass.
++     *
++     * Pass `null` to remove relevant date from this pass.
++     *
++     * @param {Date | null} date
++     * @throws if pass is frozen due to previous export
++     */
++    setRelevantDate(date: Date | null): void;
++    /**
++     * Allows to specify some barcodes formats.
++     * As per the current specifications, only the first
++     * will be shown to the user, without any possibility
++     * to change it.
++     *
++     * It accepts either a string from which all formats will
++     * be generated or a specific set of barcodes objects
++     * to be validated and used.
++     *
++     * Pass `null` to remove all the barcodes.
++     *
++     * @see https://developer.apple.com/documentation/walletpasses/pass/barcodes
++     * @param barcodes
++     * @throws if pass is frozen due to previous export
++     * @returns
++     */
++    setBarcodes(barcodes: null): void;
++    setBarcodes(message: string): void;
++    setBarcodes(...barcodes: Barcode[]): void;
++    /**
++     * Allows to specify details to make this, an
++     * NFC-capable pass.
++     *
++     * Pass `null` as parameter to remove it at all.
++     *
++     * @see https://developer.apple.com/documentation/walletpasses/pass/nfc
++     * @param data
++     * @throws if pass is frozen due to previous export
++     * @returns
++     */
++    setNFC(nfc: NFC | null): void;
++}
++
++declare const _default: {
++    PKPass: typeof PKPass;
++};
++
++export { Barcode, Beacon, Field, Location, NFC, OverridablePassProps, PKPass, PassProps, Personalize, Semantics, TransitType, _default as default };
+diff --git a/lib/index.js b/lib/index.js
+index 207474da3b9673aa74a943fe1c51086205899e82..2ee23f8d6d1ff1c359c5d74efbd256b6a6702374 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -1,9 +1,1437 @@
+-"use strict";
+-var __importDefault = (this && this.__importDefault) || function (mod) {
+-    return (mod && mod.__esModule) ? mod : { "default": mod };
+-};
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.PKPass = void 0;
+-var PKPass_1 = require("./PKPass");
+-Object.defineProperty(exports, "PKPass", { enumerable: true, get: function () { return __importDefault(PKPass_1).default; } });
+-//# sourceMappingURL=index.js.map
+\ No newline at end of file
++// src/PKPass.ts
++import { Buffer as Buffer4 } from "node:buffer";
++import path from "node:path";
++
++// src/schemas/Barcode.ts
++import Joi from "joi";
++var Barcode = Joi.object().keys({
++  altText: Joi.string(),
++  messageEncoding: Joi.string().default("iso-8859-1"),
++  format: Joi.string().required().regex(
++    /(PKBarcodeFormatQR|PKBarcodeFormatPDF417|PKBarcodeFormatAztec|PKBarcodeFormatCode128)/,
++    "barcodeType"
++  ),
++  message: Joi.string().required()
++});
++
++// src/schemas/Beacon.ts
++import Joi2 from "joi";
++var Beacon = Joi2.object().keys({
++  major: Joi2.number().integer().min(0).max(65535),
++  minor: Joi2.number().integer().min(0).max(65535),
++  proximityUUID: Joi2.string().required(),
++  relevantText: Joi2.string()
++});
++
++// src/schemas/Location.ts
++import Joi3 from "joi";
++var Location = Joi3.object().keys({
++  altitude: Joi3.number(),
++  latitude: Joi3.number().required(),
++  longitude: Joi3.number().required(),
++  relevantText: Joi3.string()
++});
++
++// src/schemas/Field.ts
++import Joi5 from "joi";
++
++// src/schemas/Semantics.ts
++import Joi4 from "joi";
++var CurrencyAmount = Joi4.object().keys({
++  currencyCode: Joi4.string(),
++  amount: Joi4.string()
++});
++var PersonNameComponent = Joi4.object().keys({
++  givenName: Joi4.string(),
++  familyName: Joi4.string(),
++  middleName: Joi4.string(),
++  namePrefix: Joi4.string(),
++  nameSuffix: Joi4.string(),
++  nickname: Joi4.string(),
++  phoneticRepresentation: Joi4.string()
++});
++var seat = Joi4.object().keys({
++  seatSection: Joi4.string(),
++  seatRow: Joi4.string(),
++  seatNumber: Joi4.string(),
++  seatIdentifier: Joi4.string(),
++  seatType: Joi4.string(),
++  seatDescription: Joi4.string()
++});
++var location = Joi4.object().keys({
++  latitude: Joi4.number().required(),
++  longitude: Joi4.number().required()
++});
++var WifiNetwork = Joi4.object().keys({
++  password: Joi4.string().required(),
++  ssid: Joi4.string().required()
++});
++var Semantics = Joi4.object().keys({
++  airlineCode: Joi4.string(),
++  artistIDs: Joi4.array().items(Joi4.string()),
++  awayTeamAbbreviation: Joi4.string(),
++  awayTeamLocation: Joi4.string(),
++  awayTeamName: Joi4.string(),
++  balance: CurrencyAmount,
++  boardingGroup: Joi4.string(),
++  boardingSequenceNumber: Joi4.string(),
++  carNumber: Joi4.string(),
++  confirmationNumber: Joi4.string(),
++  currentArrivalDate: Joi4.string(),
++  currentBoardingDate: Joi4.string(),
++  currentDepartureDate: Joi4.string(),
++  departureAirportCode: Joi4.string(),
++  departureAirportName: Joi4.string(),
++  departureGate: Joi4.string(),
++  departureLocation: location,
++  departureLocationDescription: Joi4.string(),
++  departurePlatform: Joi4.string(),
++  departureStationName: Joi4.string(),
++  departureTerminal: Joi4.string(),
++  destinationAirportCode: Joi4.string(),
++  destinationAirportName: Joi4.string(),
++  destinationGate: Joi4.string(),
++  destinationLocation: location,
++  destinationLocationDescription: Joi4.string(),
++  destinationPlatform: Joi4.string(),
++  destinationStationName: Joi4.string(),
++  destinationTerminal: Joi4.string(),
++  duration: Joi4.number(),
++  eventEndDate: Joi4.string(),
++  eventName: Joi4.string(),
++  eventStartDate: Joi4.string(),
++  eventType: Joi4.string().regex(
++    /(PKEventTypeGeneric|PKEventTypeLivePerformance|PKEventTypeMovie|PKEventTypeSports|PKEventTypeConference|PKEventTypeConvention|PKEventTypeWorkshop|PKEventTypeSocialGathering)/
++  ),
++  flightCode: Joi4.string(),
++  flightNumber: Joi4.number(),
++  genre: Joi4.string(),
++  homeTeamAbbreviation: Joi4.string(),
++  homeTeamLocation: Joi4.string(),
++  homeTeamName: Joi4.string(),
++  leagueAbbreviation: Joi4.string(),
++  leagueName: Joi4.string(),
++  membershipProgramName: Joi4.string(),
++  membershipProgramNumber: Joi4.string(),
++  originalArrivalDate: Joi4.string(),
++  originalBoardingDate: Joi4.string(),
++  originalDepartureDate: Joi4.string(),
++  passengerName: PersonNameComponent,
++  performerNames: Joi4.array().items(Joi4.string()),
++  priorityStatus: Joi4.string(),
++  seats: Joi4.array().items(seat),
++  securityScreening: Joi4.string(),
++  silenceRequested: Joi4.boolean(),
++  sportName: Joi4.string(),
++  totalPrice: CurrencyAmount,
++  transitProvider: Joi4.string(),
++  transitStatus: Joi4.string(),
++  transitStatusReason: Joi4.string(),
++  vehicleName: Joi4.string(),
++  vehicleNumber: Joi4.string(),
++  vehicleType: Joi4.string(),
++  venueEntrance: Joi4.string(),
++  venueLocation: location,
++  venueName: Joi4.string(),
++  venuePhoneNumber: Joi4.string(),
++  venueRoom: Joi4.string(),
++  wifiAccess: Joi4.array().items(WifiNetwork)
++});
++
++// src/schemas/Field.ts
++var Field = Joi5.object().keys({
++  attributedValue: Joi5.alternatives(
++    Joi5.string().allow(""),
++    Joi5.number(),
++    Joi5.date().iso()
++  ),
++  changeMessage: Joi5.string(),
++  dataDetectorTypes: Joi5.array().items(
++    Joi5.string().regex(
++      /(PKDataDetectorTypePhoneNumber|PKDataDetectorTypeLink|PKDataDetectorTypeAddress|PKDataDetectorTypeCalendarEvent)/,
++      "dataDetectorType"
++    )
++  ),
++  label: Joi5.string().allow(""),
++  textAlignment: Joi5.string().regex(
++    /(PKTextAlignmentLeft|PKTextAlignmentCenter|PKTextAlignmentRight|PKTextAlignmentNatural)/,
++    "graphic-alignment"
++  ),
++  key: Joi5.string().required(),
++  value: Joi5.alternatives(
++    Joi5.string().allow(""),
++    Joi5.number(),
++    Joi5.date().iso()
++  ).required(),
++  semantics: Semantics,
++  // date fields formatters, all optionals
++  dateStyle: Joi5.string().regex(
++    /(PKDateStyleNone|PKDateStyleShort|PKDateStyleMedium|PKDateStyleLong|PKDateStyleFull)/,
++    "date style"
++  ),
++  ignoresTimeZone: Joi5.boolean(),
++  isRelative: Joi5.boolean(),
++  timeStyle: Joi5.string().regex(
++    /(PKDateStyleNone|PKDateStyleShort|PKDateStyleMedium|PKDateStyleLong|PKDateStyleFull)/,
++    "date style"
++  ),
++  // number fields formatters, all optionals
++  currencyCode: Joi5.string().when("value", {
++    is: Joi5.number(),
++    otherwise: Joi5.string().forbidden()
++  }),
++  numberStyle: Joi5.string().regex(
++    /(PKNumberStyleDecimal|PKNumberStylePercent|PKNumberStyleScientific|PKNumberStyleSpellOut)/
++  ).when("value", {
++    is: Joi5.number(),
++    otherwise: Joi5.string().forbidden()
++  })
++});
++var FieldWithRow = Field.concat(
++  Joi5.object().keys({
++    row: Joi5.number().min(0).max(1)
++  })
++);
++
++// src/schemas/NFC.ts
++import Joi6 from "joi";
++var NFC = Joi6.object().keys({
++  message: Joi6.string().required().max(64),
++  encryptionPublicKey: Joi6.string().required(),
++  requiresAuthentication: Joi6.boolean()
++});
++
++// src/schemas/PassFields.ts
++import Joi7 from "joi";
++var TransitType = Joi7.string().regex(
++  /(PKTransitTypeAir|PKTransitTypeBoat|PKTransitTypeBus|PKTransitTypeGeneric|PKTransitTypeTrain)/
++);
++var PassFields = Joi7.object().keys({
++  auxiliaryFields: Joi7.array().items(FieldWithRow),
++  backFields: Joi7.array().items(Field),
++  headerFields: Joi7.array().items(Field),
++  primaryFields: Joi7.array().items(Field),
++  secondaryFields: Joi7.array().items(Field),
++  transitType: TransitType
++});
++
++// src/schemas/Personalize.ts
++import Joi8 from "joi";
++var Personalize = Joi8.object().keys({
++  description: Joi8.string().required(),
++  requiredPersonalizationFields: Joi8.array().items(
++    "PKPassPersonalizationFieldName",
++    "PKPassPersonalizationFieldPostalCode",
++    "PKPassPersonalizationFieldEmailAddress",
++    "PKPassPersonalizationFieldPhoneNumber"
++  ).required(),
++  termsAndConditions: Joi8.string()
++});
++
++// src/schemas/Certificates.ts
++import { Buffer } from "node:buffer";
++import Joi9 from "joi";
++var binary = Joi9.binary ? Joi9.binary() : Joi9.custom((obj) => Buffer.isBuffer(obj));
++var CertificatesSchema = Joi9.object().keys({
++  wwdr: Joi9.alternatives(binary, Joi9.string()).required(),
++  signerCert: Joi9.alternatives(binary, Joi9.string()).required(),
++  signerKey: Joi9.alternatives(binary, Joi9.string()).required(),
++  signerKeyPassphrase: Joi9.string()
++}).required();
++
++// src/schemas/index.ts
++import Joi10 from "joi";
++
++// src/messages.ts
++var INIT = {
++  INVALID_BUFFERS: "Cannot set buffers in constructor: expected object but received %s"
++};
++var CERTIFICATES = {
++  INVALID: "Invalid certificate(s) loaded. %s. Please provide valid WWDR certificates and developer signer certificate and key (with passphrase).\nRefer to docs to obtain them"
++};
++var TRANSIT_TYPE = {
++  UNEXPECTED_PASS_TYPE: "Cannot set transitType on a pass with type different from boardingPass.",
++  INVALID: "Cannot set transitType because not compliant with Apple specifications. Refer to https://apple.co/3DHuAG4 for more - %s"
++};
++var PASS_TYPE = {
++  INVALID: "Cannot set type because not compliant with Apple specifications. Refer to https://apple.co/3aFpSfg for a list of valid props - %s"
++};
++var FILTER_VALID = {
++  INVALID: "Cannot validate property. %s"
++};
++var FIELDS = {
++  INVALID: "Cannot add field. %s",
++  REPEATED_KEY: "Cannot add field with key '%s': another field already owns this key. Ignored."
++};
++var DATE = {
++  INVALID: "Cannot set %s. Invalid date %s"
++};
++var LANGUAGES = {
++  INVALID_LANG: "Cannot set localization. Expected a string for 'lang' but received %s",
++  NO_TRANSLATIONS: "Cannot create or use language %s. If your itention was to just add a language (.lproj) folder to the bundle, both specify some translations or use .addBuffer to add some media."
++};
++var PASS_SOURCE = {
++  INVALID: "Cannot add pass.json to bundle because it is invalid. %s",
++  UNKNOWN_TYPE: "Cannot find a valid type in pass.json. You won't be able to set fields until you won't set explicitly one.",
++  JOIN: "The imported pass.json's properties will be joined with the current setted props. You might lose some data."
++};
++var PERSONALIZE = {
++  INVALID: "Cannot add personalization.json to bundle because it is invalid. %s"
++};
++var JSON2 = {
++  INVALID: "Cannot parse JSON. Invalid file"
++};
++var CLOSE = {
++  MISSING_TYPE: "Cannot proceed creating the pass because type is missing.",
++  MISSING_ICON: "At least one icon file is missing in your bundle. Your pass won't be openable by any Apple Device.",
++  PERSONALIZATION_REMOVED: "Personalization file '%s' have been removed from the bundle as the requirements for personalization are not met.",
++  MISSING_TRANSIT_TYPE: "Cannot proceed creating the pass because transitType is missing on your boardingPass."
++};
++var BUNDLE = {
++  MIME_TYPE_MISSING: "Cannot build Bundle. MimeType is missing",
++  CLOSED: "Cannot add file or set property. Bundle is closed."
++};
++var FROM = {
++  MISSING_SOURCE: "Cannot create PKPass from source: source is '%s'"
++};
++var PACK = {
++  INVALID: "Cannot pack passes. Only PKPass instances allowed"
++};
++function format(messageName, ...values) {
++  const replaceValues = values.reverse();
++  return messageName.replace(/%s/g, () => replaceValues.pop());
++}
++
++// src/schemas/index.ts
++var RGB_COLOR_REGEX = /rgb\(\s*(?:[01]?[0-9][0-9]?|2[0-4][0-9]|25[0-5])\s*,\s*(?:[01]?[0-9][0-9]?|2[0-4][0-9]|25[0-5])\s*,\s*(?:[01]?[0-9][0-9]?|2[0-4][0-9]|25[0-5])\s*\)/;
++var PassPropsFromMethods = Joi10.object({
++  nfc: NFC,
++  beacons: Joi10.array().items(Beacon),
++  barcodes: Joi10.array().items(Barcode),
++  relevantDate: Joi10.string().isoDate(),
++  expirationDate: Joi10.string().isoDate(),
++  locations: Joi10.array().items(Location)
++});
++var PassKindsProps = Joi10.object({
++  coupon: PassFields.disallow("transitType"),
++  generic: PassFields.disallow("transitType"),
++  storeCard: PassFields.disallow("transitType"),
++  eventTicket: PassFields.disallow("transitType"),
++  boardingPass: PassFields
++});
++var PassType = Joi10.string().regex(
++  /(boardingPass|coupon|eventTicket|storeCard|generic)/
++);
++var OverridablePassProps = Joi10.object({
++  formatVersion: Joi10.number().default(1),
++  semantics: Semantics,
++  voided: Joi10.boolean(),
++  logoText: Joi10.string(),
++  description: Joi10.string(),
++  serialNumber: Joi10.string(),
++  appLaunchURL: Joi10.string(),
++  teamIdentifier: Joi10.string(),
++  organizationName: Joi10.string(),
++  passTypeIdentifier: Joi10.string(),
++  sharingProhibited: Joi10.boolean(),
++  groupingIdentifier: Joi10.string(),
++  suppressStripShine: Joi10.boolean(),
++  maxDistance: Joi10.number().positive(),
++  authenticationToken: Joi10.string().min(16),
++  labelColor: Joi10.string().regex(RGB_COLOR_REGEX),
++  backgroundColor: Joi10.string().regex(RGB_COLOR_REGEX),
++  foregroundColor: Joi10.string().regex(RGB_COLOR_REGEX),
++  associatedStoreIdentifiers: Joi10.array().items(Joi10.number()),
++  userInfo: Joi10.alternatives(Joi10.object().unknown(), Joi10.array()),
++  // parsing url as set of words and nums followed by dots, optional port and any possible path after
++  webServiceURL: Joi10.string().regex(
++    /https?:\/\/(?:[a-z0-9]+\.?)+(?::\d{2,})?(?:\/[\S]+)*/
++  )
++}).with("webServiceURL", "authenticationToken");
++var PassProps = Joi10.object().concat(OverridablePassProps).concat(PassKindsProps).concat(PassPropsFromMethods);
++var Template = Joi10.object({
++  model: Joi10.string().required(),
++  certificates: Joi10.object().required()
++});
++function assertValidity(schema, data, customErrorMessage) {
++  const validation = schema.validate(data);
++  if (validation.error) {
++    if (customErrorMessage) {
++      console.warn(validation.error);
++      throw new TypeError(
++        `${validation.error.name} happened. ${format(
++          customErrorMessage,
++          validation.error.message
++        )}`
++      );
++    }
++    throw new TypeError(validation.error.message);
++  }
++}
++function validate(schema, options) {
++  const validationResult = schema.validate(options, {
++    stripUnknown: true,
++    abortEarly: true
++  });
++  if (validationResult.error) {
++    throw validationResult.error;
++  }
++  return validationResult.value;
++}
++function filterValid(schema, source) {
++  if (!source) {
++    return [];
++  }
++  return source.reduce((acc, current) => {
++    try {
++      return [...acc, validate(schema, current)];
++    } catch (err) {
++      console.warn(format(FILTER_VALID.INVALID, err));
++      return [...acc];
++    }
++  }, []);
++}
++
++// src/utils.ts
++function processDate(date) {
++  if (!(date instanceof Date) || Number.isNaN(Number(date))) {
++    throw "Invalid date";
++  }
++  return date.toISOString();
++}
++function cloneRecursive(object) {
++  const objectCopy = {};
++  const objectEntries = Object.entries(object);
++  for (let i = 0; i < objectEntries.length; i++) {
++    const [key, value] = objectEntries[i];
++    if (value && typeof value === "object") {
++      if (Array.isArray(value)) {
++        objectCopy[key] = value.slice();
++        for (let j = 0; j < value.length; j++) {
++          objectCopy[key][j] = cloneRecursive(value[j]);
++        }
++      } else {
++        objectCopy[key] = cloneRecursive(value);
++      }
++    } else {
++      objectCopy[key] = value;
++    }
++  }
++  return objectCopy;
++}
++function assertUnfrozen(instance) {
++  if (instance.isFrozen) {
++    throw new Error(BUNDLE.CLOSED);
++  }
++}
++
++// src/FieldsArray.ts
++var passInstanceSymbol = Symbol("passInstance");
++var sharedKeysPoolSymbol = Symbol("keysPool");
++var fieldSchemaSymbol = Symbol("fieldSchema");
++var FieldsArray = class extends Array {
++  [passInstanceSymbol];
++  [sharedKeysPoolSymbol];
++  constructor(passInstance, keysPool, fieldSchema, ...args) {
++    super(...args);
++    this[fieldSchemaSymbol] = fieldSchema;
++    this[passInstanceSymbol] = passInstance;
++    this[sharedKeysPoolSymbol] = keysPool;
++  }
++  push(...items) {
++    const validItems = registerWithValidation(this, ...items);
++    return super.push(...validItems);
++  }
++  pop() {
++    return unregisterItems(this, () => super.pop());
++  }
++  splice(start, deleteCount, ...items) {
++    const validItems = registerWithValidation(this, ...items);
++    for (let i = start; i < start + deleteCount; i++) {
++      this[sharedKeysPoolSymbol].delete(this[i].key);
++    }
++    return super.splice(start, deleteCount, ...validItems);
++  }
++  shift() {
++    return unregisterItems(this, () => super.shift());
++  }
++  unshift(...items) {
++    const validItems = registerWithValidation(this, ...items);
++    return super.unshift(...validItems);
++  }
++};
++function registerWithValidation(instance, ...items) {
++  assertUnfrozen(instance[passInstanceSymbol]);
++  let validItems = [];
++  for (const field of items) {
++    if (!field) {
++      console.warn(format(FIELDS.INVALID, field));
++      continue;
++    }
++    try {
++      assertValidity(
++        instance[fieldSchemaSymbol],
++        field,
++        FIELDS.INVALID
++      );
++      if (instance[sharedKeysPoolSymbol].has(field.key)) {
++        throw new TypeError(
++          format(FIELDS.REPEATED_KEY, field.key)
++        );
++      }
++      instance[sharedKeysPoolSymbol].add(field.key);
++      validItems.push(field);
++    } catch (err) {
++      if (err instanceof Error) {
++        console.warn(err.message ? err.message : err);
++      } else {
++        console.warn(err);
++      }
++    }
++  }
++  return validItems;
++}
++function unregisterItems(instance, removeFn) {
++  assertUnfrozen(instance[passInstanceSymbol]);
++  const element = removeFn();
++  instance[sharedKeysPoolSymbol].delete(element.key);
++  return element;
++}
++
++// src/Bundle.ts
++import { Readable } from "node:stream";
++import * as zip from "do-not-zip";
++var filesSymbol = Symbol("bundleFiles");
++var freezeSymbol = Symbol("bundleFreeze");
++var mimeTypeSymbol = Symbol("bundleMimeType");
++var Bundle = class _Bundle {
++  [filesSymbol] = {};
++  [mimeTypeSymbol];
++  constructor(mimeType) {
++    if (!mimeType) {
++      throw new Error(BUNDLE.MIME_TYPE_MISSING);
++    }
++    this[mimeTypeSymbol] = mimeType;
++  }
++  /**
++   * Creates a bundle and exposes the
++   * function to freeze it manually once
++   * completed.
++   *
++   * This was made to not expose freeze
++   * function outside of Bundle class.
++   *
++   * Normally, a bundle would get freezed
++   * when using getAsBuffer or getAsStream
++   * but when creating a PKPasses archive,
++   * we need to freeze the bundle so the
++   * user cannot add more files (we want to
++   * allow them to only the selected files)
++   * but also letting them choose how to
++   * export it.
++   *
++   * @param mimeType
++   * @returns
++   */
++  static freezable(mimeType) {
++    const bundle = new _Bundle(mimeType);
++    return [bundle, () => bundle[freezeSymbol]()];
++  }
++  /**
++   * Retrieves bundle's mimeType
++   */
++  get mimeType() {
++    return this[mimeTypeSymbol];
++  }
++  /**
++   * Freezes the bundle so no more files
++   * can be added any further.
++   */
++  [freezeSymbol]() {
++    if (this.isFrozen) {
++      return;
++    }
++    Object.freeze(this[filesSymbol]);
++  }
++  /**
++   * Tells if this bundle still allows files to be added.
++   * @returns false if files are allowed, true otherwise
++   */
++  get isFrozen() {
++    return Object.isFrozen(this[filesSymbol]);
++  }
++  /**
++   * Returns a copy of the current list of buffers
++   * that have been added to the class.
++   *
++   * It does not include translation files, manifest
++   * and signature.
++   *
++   * Final files list might differ due to export
++   * conditions.
++   */
++  get files() {
++    return Object.keys(this[filesSymbol]);
++  }
++  /**
++   * Allows files to be added to the bundle.
++   * If the bundle is closed, it will throw an error.
++   *
++   * @param fileName
++   * @param buffer
++   */
++  addBuffer(fileName, buffer) {
++    if (this.isFrozen) {
++      throw new Error(BUNDLE.CLOSED);
++    }
++    this[filesSymbol][fileName] = buffer;
++  }
++  /**
++   * Closes the bundle and returns it as a Buffer.
++   * Once closed, the bundle does not allow files
++   * to be added any further.
++   *
++   * @returns Buffer
++   */
++  getAsBuffer() {
++    this[freezeSymbol]();
++    return zip.toBuffer(createZipFilesMap(this[filesSymbol]));
++  }
++  /**
++   * Closes the bundle and returns it as a stream.
++   * Once closed, the bundle does not allow files
++   * to be added any further.
++   *
++   * @returns
++   */
++  getAsStream() {
++    this[freezeSymbol]();
++    return Readable.from(
++      zip.toBuffer(createZipFilesMap(this[filesSymbol]))
++    );
++  }
++  /**
++   * Closes the bundle and returns it as an object.
++   * This allows developers to choose a different way
++   * of serving, analyzing or zipping the file, outside the
++   * default compression system.
++   *
++   * @returns a frozen object containing files paths as key
++   * 		and Buffers as content.
++   */
++  getAsRaw() {
++    this[freezeSymbol]();
++    return Object.freeze({ ...this[filesSymbol] });
++  }
++};
++function createZipFilesMap(files) {
++  return Object.entries(files).map(([path2, data]) => ({
++    path: path2,
++    data
++  }));
++}
++
++// src/Signature.ts
++import forge from "node-forge";
++import { Buffer as Buffer2 } from "node:buffer";
++function createHash(buffer) {
++  const hashFlow = forge.md.sha1.create();
++  hashFlow.update(buffer.toString("binary"));
++  return hashFlow.digest().toHex();
++}
++function create(manifestBuffer, certificates) {
++  const signature = forge.pkcs7.createSignedData();
++  signature.content = new forge.util.ByteStringBuffer(manifestBuffer);
++  const { wwdr, signerCert, signerKey } = parseCertificates(
++    getStringCertificates(certificates)
++  );
++  signature.addCertificate(wwdr);
++  signature.addCertificate(signerCert);
++  signature.addSigner({
++    key: signerKey,
++    certificate: signerCert,
++    digestAlgorithm: forge.pki.oids.sha1,
++    authenticatedAttributes: [
++      {
++        type: forge.pki.oids.contentType,
++        value: forge.pki.oids.data
++      },
++      {
++        type: forge.pki.oids.messageDigest
++      },
++      {
++        type: forge.pki.oids.signingTime
++      }
++    ]
++  });
++  signature.sign({ detached: true });
++  return Buffer2.from(
++    forge.asn1.toDer(signature.toAsn1()).getBytes(),
++    "binary"
++  );
++}
++function parseCertificates(certificates) {
++  const { signerCert, signerKey, wwdr, signerKeyPassphrase } = certificates;
++  return {
++    signerCert: forge.pki.certificateFromPem(signerCert.toString("utf-8")),
++    wwdr: forge.pki.certificateFromPem(wwdr.toString("utf-8")),
++    signerKey: forge.pki.decryptRsaPrivateKey(
++      signerKey.toString("utf-8"),
++      signerKeyPassphrase
++    )
++  };
++}
++function getStringCertificates(certificates) {
++  return {
++    signerKeyPassphrase: certificates.signerKeyPassphrase,
++    wwdr: Buffer2.from(certificates.wwdr).toString("utf-8"),
++    signerCert: Buffer2.from(certificates.signerCert).toString("utf-8"),
++    signerKey: Buffer2.from(certificates.signerKey).toString("utf-8")
++  };
++}
++
++// src/StringsUtils.ts
++import { Buffer as Buffer3 } from "node:buffer";
++function parse(buffer) {
++  const fileAsString = buffer.toString("utf8");
++  const translationRowRegex = /"(?<key>.+)"\s+=\s+"(?<value>.+)";\n?/;
++  const commentRowRegex = /\/\*\s*(.+)\s*\*\//;
++  let translations = [];
++  let comments = [];
++  let blockStartPoint = 0;
++  let blockEndPoint = 0;
++  do {
++    if (
++      /** New Line, new life */
++      /\n/.test(fileAsString[blockEndPoint]) || /** EOF  */
++      blockEndPoint === fileAsString.length
++    ) {
++      let match;
++      const section = fileAsString.substring(
++        blockStartPoint,
++        blockEndPoint + 1
++      );
++      if ((match = section.match(translationRowRegex)) && match.groups) {
++        const {
++          groups: { key, value }
++        } = match;
++        translations.push([key, value]);
++      } else if (match = section.match(commentRowRegex)) {
++        const [, content] = match;
++        comments.push(content.trimEnd());
++      }
++      blockEndPoint += 2;
++      blockStartPoint = blockEndPoint - 1;
++    } else {
++      blockEndPoint += 1;
++    }
++  } while (blockEndPoint <= fileAsString.length);
++  return {
++    translations,
++    comments
++  };
++}
++function create2(translations) {
++  const stringContents = [];
++  const translationsEntries = Object.entries(translations);
++  for (let i = 0; i < translationsEntries.length; i++) {
++    const [key, value] = translationsEntries[i];
++    stringContents.push(`"${key}" = "${value}";`);
++  }
++  return Buffer3.from(stringContents.join("\n"));
++}
++
++// src/PKPass.ts
++var propsSymbol = Symbol("props");
++var localizationSymbol = Symbol("pass.l10n");
++var importMetadataSymbol = Symbol("import.pass.metadata");
++var createManifestSymbol = Symbol("pass.manifest");
++var closePassSymbol = Symbol("pass.close");
++var passTypeSymbol = Symbol("pass.type");
++var certificatesSymbol = Symbol("pass.certificates");
++var RegExps = {
++  PASS_JSON: /pass\.json/,
++  MANIFEST_OR_SIGNATURE: /manifest|signature/,
++  PERSONALIZATION: {
++    JSON: /personalization\.json/,
++    LOGO: /personalizationLogo@(?:.{2})/
++  },
++  PASS_STRINGS: /(?<lang>[a-zA-Z-]{2,}).lproj\/pass\.strings/,
++  PASS_ICON: /icon(?:@\d{1}x)?/
++};
++var PKPass = class _PKPass extends Bundle {
++  [certificatesSymbol];
++  [propsSymbol] = {};
++  [localizationSymbol] = {};
++  [passTypeSymbol] = void 0;
++  /**
++   * Either create a pass from another one
++   * or a disk path.
++   *
++   * @param source
++   * @returns
++   */
++  static async from(source, props) {
++    let certificates = void 0;
++    let buffers = void 0;
++    if (!source) {
++      throw new TypeError(
++        format(FROM.MISSING_SOURCE, source)
++      );
++    }
++    if (source instanceof _PKPass) {
++      certificates = source[certificatesSymbol];
++      buffers = {};
++      const buffersEntries = Object.entries(source[filesSymbol]);
++      for (let i = 0; i < buffersEntries.length; i++) {
++        const [fileName, contentBuffer] = buffersEntries[i];
++        buffers[fileName] = Buffer4.alloc(contentBuffer.length);
++        contentBuffer.copy(buffers[fileName]);
++      }
++      buffers["pass.json"] = Buffer4.from(
++        JSON.stringify(source[propsSymbol])
++      );
++    }
++    return new _PKPass(buffers, certificates, props);
++  }
++  /**
++   * Creates a Bundle made of PKPass to be distributed
++   * as a `.pkpasses` zip file. Returns a Bundle instance
++   * so it can be outputted both as stream or as a buffer.
++   *
++   * Using this will freeze all the instances passed as
++   * parameter.
++   *
++   * Throws if not all the files are instance of PKPass.
++   *
++   * @param passes
++   */
++  static pack(...passes) {
++    const [bundle, freezeBundle] = Bundle.freezable(
++      "application/vnd.apple.pkpasses"
++    );
++    for (let i = 0; i < passes.length; i++) {
++      const pass = passes[i];
++      if (!(pass instanceof _PKPass)) {
++        throw new Error(PACK.INVALID);
++      }
++      bundle.addBuffer(`packed-pass-${i + 1}.pkpass`, pass.getAsBuffer());
++    }
++    freezeBundle();
++    return bundle;
++  }
++  // **************** //
++  // *** INSTANCE *** //
++  // **************** //
++  constructor(buffers, certificates, props) {
++    super("application/vnd.apple.pkpass");
++    if (buffers && typeof buffers === "object") {
++      const buffersEntries = Object.entries(buffers);
++      for (let i = buffersEntries.length, buffer; buffer = buffersEntries[--i]; ) {
++        const [fileName, contentBuffer] = buffer;
++        this.addBuffer(fileName, contentBuffer);
++      }
++    } else {
++      console.warn(
++        format(INIT.INVALID_BUFFERS, typeof buffers)
++      );
++    }
++    if (props) {
++      const overridesValidation = validate(
++        OverridablePassProps,
++        props
++      );
++      Object.assign(this[propsSymbol], overridesValidation);
++    }
++    if (certificates) {
++      this.certificates = certificates;
++    }
++  }
++  /**
++   * Allows changing the certificates, if needed.
++   * They are actually expected to be received in
++   * the constructor, but they can get overridden
++   * here for whatever purpose.
++   *
++   * When using this setter, all certificates are
++   * expected to be received, or an exception will
++   * be thrown.
++   *
++   * @param certs
++   */
++  set certificates(certs) {
++    assertUnfrozen(this);
++    assertValidity(
++      CertificatesSchema,
++      certs,
++      CERTIFICATES.INVALID
++    );
++    this[certificatesSymbol] = certs;
++  }
++  /**
++   * Allows retrieving current languages
++   */
++  get languages() {
++    return Object.keys(this[localizationSymbol]);
++  }
++  /**
++   * Allows getting an image of the props
++   * that are composing your pass instance.
++   */
++  get props() {
++    return cloneRecursive(this[propsSymbol]);
++  }
++  /**
++   * Allows setting a transitType property
++   * for a boardingPass.
++   *
++   * @throws if current type is not "boardingPass".
++   * @param value
++   */
++  set transitType(value) {
++    assertUnfrozen(this);
++    if (this.type !== "boardingPass") {
++      throw new TypeError(TRANSIT_TYPE.UNEXPECTED_PASS_TYPE);
++    }
++    assertValidity(
++      TransitType,
++      value,
++      TRANSIT_TYPE.INVALID
++    );
++    this[propsSymbol]["boardingPass"].transitType = value;
++  }
++  /**
++   * Allows getting the current transitType
++   * from pass props.
++   *
++   * @throws (automatically) if current type is not "boardingPass".
++   */
++  get transitType() {
++    return this[propsSymbol]["boardingPass"].transitType;
++  }
++  /**
++   * Allows accessing to primaryFields object.
++   *
++   * @throws (automatically) if no valid pass.json
++   * 		has been parsed yet or, anyway, if current
++   * 		instance has not a valid type set yet.
++   */
++  get primaryFields() {
++    return this[propsSymbol][this.type].primaryFields;
++  }
++  /**
++   * Allows accessing to secondaryFields object
++   *
++   * @throws (automatically) if no valid pass.json
++   * 		has been parsed yet or, anyway, if current
++   * 		instance has not a valid type set yet.
++   */
++  get secondaryFields() {
++    return this[propsSymbol][this.type].secondaryFields;
++  }
++  /**
++   * Allows accessing to auxiliaryFields object
++   *
++   * For Typescript users: this signature allows
++   * in any case to add the 'row' field, but on
++   * runtime they are only allowed on "eventTicket"
++   * passes.
++   *
++   * @throws (automatically) if no valid pass.json
++   * 		has been parsed yet or, anyway, if current
++   * 		instance has not a valid type set yet.
++   */
++  get auxiliaryFields() {
++    return this[propsSymbol][this.type].auxiliaryFields;
++  }
++  /**
++   * Allows accessing to headerFields object
++   *
++   * @throws (automatically) if no valid pass.json
++   * 		has been parsed yet or, anyway, if current
++   * 		instance has not a valid type set yet.
++   */
++  get headerFields() {
++    return this[propsSymbol][this.type].headerFields;
++  }
++  /**
++   * Allows accessing to backFields object
++   *
++   * @throws (automatically) if no valid pass.json
++   * 		has been parsed yet or, anyway, if current
++   * 		instance has not a valid type set yet.
++   */
++  get backFields() {
++    return this[propsSymbol][this.type].backFields;
++  }
++  /**
++   * Allows setting a pass type.
++   *
++   * **Warning**: setting a type with this setter,
++   * will reset all the fields (primaryFields,
++   * secondaryFields, headerFields, auxiliaryFields, backFields),
++   * both imported or manually set.
++   */
++  set type(nextType) {
++    assertUnfrozen(this);
++    assertValidity(
++      PassType,
++      nextType,
++      PASS_TYPE.INVALID
++    );
++    const type = nextType;
++    if (this.type) {
++      this[propsSymbol][this.type] = void 0;
++    }
++    const sharedKeysPool = /* @__PURE__ */ new Set();
++    this[passTypeSymbol] = type;
++    this[propsSymbol][type] = {
++      headerFields: new FieldsArray(
++        this,
++        sharedKeysPool,
++        Field
++      ),
++      primaryFields: new FieldsArray(
++        this,
++        sharedKeysPool,
++        Field
++      ),
++      secondaryFields: new FieldsArray(
++        this,
++        sharedKeysPool,
++        Field
++      ),
++      auxiliaryFields: new FieldsArray(
++        this,
++        sharedKeysPool,
++        type === "eventTicket" ? FieldWithRow : Field
++      ),
++      backFields: new FieldsArray(
++        this,
++        sharedKeysPool,
++        Field
++      ),
++      transitType: void 0
++    };
++  }
++  get type() {
++    return this[passTypeSymbol] ?? void 0;
++  }
++  // **************************** //
++  // *** ASSETS SETUP METHODS *** //
++  // **************************** //
++  /**
++   * Allows adding a new asset inside the pass / bundle with
++   * the following exceptions:
++   *
++   * - Empty buffers are ignored;
++   * - `manifest.json` and `signature` files will be ignored;
++   * - `pass.json` will be read validated and merged in the
++   * 	current instance, if it wasn't added previously.
++   * 	It's properties will overwrite the instance ones.
++   * 	You might loose data;
++   * - `pass.strings` files will be read, parsed and merged
++   * 	with the current translations. Comments will be ignored;
++   * - `personalization.json` will be read, validated and added.
++   * 	They will be stripped out when exporting the pass if
++   * 	it won't have NFC details or if any of the personalization
++   * 	files is missing;
++   *
++   * @param pathName
++   * @param buffer
++   */
++  addBuffer(pathName, buffer) {
++    if (!buffer?.length) {
++      return;
++    }
++    if (RegExps.MANIFEST_OR_SIGNATURE.test(pathName)) {
++      return;
++    }
++    if (RegExps.PASS_JSON.test(pathName)) {
++      if (this[filesSymbol]["pass.json"]) {
++        return;
++      }
++      try {
++        this[importMetadataSymbol](
++          validateJSONBuffer(buffer, PassProps)
++        );
++      } catch (err) {
++        console.warn(
++          format(PASS_SOURCE.INVALID, err)
++        );
++        return;
++      }
++      return super.addBuffer(pathName, Buffer4.alloc(0));
++    }
++    if (RegExps.PERSONALIZATION.JSON.test(pathName)) {
++      try {
++        validateJSONBuffer(buffer, Personalize);
++      } catch (err) {
++        console.warn(
++          format(PERSONALIZE.INVALID, err)
++        );
++        return;
++      }
++      return super.addBuffer(pathName, buffer);
++    }
++    const normalizedPathName = pathName.replace(path.sep, "/");
++    let match;
++    if (match = normalizedPathName.match(RegExps.PASS_STRINGS)) {
++      const [, lang] = match;
++      const parsedTranslations = parse(buffer).translations;
++      if (!parsedTranslations.length) {
++        return;
++      }
++      this.localize(lang, Object.fromEntries(parsedTranslations));
++      return;
++    }
++    return super.addBuffer(normalizedPathName, buffer);
++  }
++  /**
++   * Given data from a pass.json, reads them to bring them
++   * into the current pass instance.
++   *
++   * @param data
++   */
++  [importMetadataSymbol](data) {
++    const possibleTypes = [
++      "boardingPass",
++      "coupon",
++      "eventTicket",
++      "storeCard",
++      "generic"
++    ];
++    const type = possibleTypes.find((type2) => Boolean(data[type2]));
++    const {
++      boardingPass,
++      coupon,
++      storeCard,
++      generic,
++      eventTicket,
++      ...otherPassData
++    } = data;
++    if (Object.keys(this[propsSymbol]).length) {
++      console.warn(PASS_SOURCE.JOIN);
++    }
++    Object.assign(this[propsSymbol], otherPassData);
++    if (!type) {
++      if (!this[passTypeSymbol]) {
++        console.warn(PASS_SOURCE.UNKNOWN_TYPE);
++      }
++    } else {
++      this.type = type;
++      const {
++        headerFields = [],
++        primaryFields = [],
++        secondaryFields = [],
++        auxiliaryFields = [],
++        backFields = [],
++        transitType
++      } = data[type] || {};
++      this.headerFields.push(...headerFields);
++      this.primaryFields.push(...primaryFields);
++      this.secondaryFields.push(...secondaryFields);
++      this.auxiliaryFields.push(...auxiliaryFields);
++      this.backFields.push(...backFields);
++      if (this.type === "boardingPass") {
++        this.transitType = transitType;
++      }
++    }
++  }
++  /**
++   * Creates the manifest starting from files
++   * added to the bundle
++   */
++  [createManifestSymbol]() {
++    const manifest = Object.entries(this[filesSymbol]).reduce(
++      (acc, [fileName, buffer]) => ({
++        ...acc,
++        [fileName]: createHash(buffer)
++      }),
++      {}
++    );
++    return Buffer4.from(JSON.stringify(manifest));
++  }
++  /**
++   * Applies the last validation checks against props,
++   * applies the props to pass.json and creates l10n
++   * files and folders and creates manifest and
++   * signature files
++   */
++  [closePassSymbol]() {
++    if (!this.type) {
++      throw new TypeError(CLOSE.MISSING_TYPE);
++    }
++    const fileNames = Object.keys(this[filesSymbol]);
++    const passJson = Buffer4.from(JSON.stringify(this[propsSymbol]));
++    super.addBuffer("pass.json", passJson);
++    if (!fileNames.some((fileName) => RegExps.PASS_ICON.test(fileName))) {
++      console.warn(CLOSE.MISSING_ICON);
++    }
++    const localizationEntries = Object.entries(this[localizationSymbol]);
++    for (let i = localizationEntries.length - 1; i >= 0; i--) {
++      const [lang, translations] = localizationEntries[i];
++      const stringsFile = create2(translations);
++      if (stringsFile.length) {
++        super.addBuffer(`${lang}.lproj/pass.strings`, stringsFile);
++      }
++    }
++    const meetsPersonalizationRequirements = Boolean(
++      this[propsSymbol]["nfc"] && this[filesSymbol]["personalization.json"] && fileNames.find(
++        (file) => RegExps.PERSONALIZATION.LOGO.test(file)
++      )
++    );
++    if (!meetsPersonalizationRequirements) {
++      for (let i = 0; i < fileNames.length; i++) {
++        if (fileNames[i].includes("personalization")) {
++          console.warn(
++            format(
++              CLOSE.PERSONALIZATION_REMOVED,
++              fileNames[i]
++            )
++          );
++          delete this[filesSymbol][fileNames[i]];
++        }
++      }
++    }
++    if (this.type === "boardingPass" && !this.transitType) {
++      throw new TypeError(CLOSE.MISSING_TRANSIT_TYPE);
++    }
++    const manifestBuffer = this[createManifestSymbol]();
++    super.addBuffer("manifest.json", manifestBuffer);
++    const signatureBuffer = create(
++      manifestBuffer,
++      this[certificatesSymbol]
++    );
++    super.addBuffer("signature", signatureBuffer);
++  }
++  // ************************* //
++  // *** EXPORTING METHODS *** //
++  // ************************* //
++  /**
++   * Exports the pass as a zip buffer. When this method
++   * is invoked, the bundle will get frozen and, thus,
++   * no files will be allowed to be added any further.
++   *
++   * @returns
++   */
++  getAsBuffer() {
++    if (!this.isFrozen) {
++      this[closePassSymbol]();
++    }
++    return super.getAsBuffer();
++  }
++  /**
++   * Exports the pass as a zip stream. When this method
++   * is invoked, the bundle will get frozen and, thus,
++   * no files will be allowed to be added any further.
++   *
++   * @returns
++   */
++  getAsStream() {
++    if (!this.isFrozen) {
++      this[closePassSymbol]();
++    }
++    return super.getAsStream();
++  }
++  /**
++   * Exports the pass as a list of file paths and buffers.
++   * When this method is invoked, the bundle will get
++   * frozen and, thus, no files will be allowed to be
++   * added any further.
++   *
++   * This allows developers to choose a different way
++   * of serving, analyzing or zipping the file, outside the
++   * default compression system.
++   *
++   * @returns a frozen object containing files paths as key
++   * 		and Buffers as content.
++   */
++  getAsRaw() {
++    if (!this.isFrozen) {
++      this[closePassSymbol]();
++    }
++    return super.getAsRaw();
++  }
++  // ************************** //
++  // *** DATA SETUP METHODS *** //
++  // ************************** //
++  /**
++   * Allows to add a localization details to the
++   * final bundle with some translations.
++   *
++   * If the language already exists, translations will be
++   * merged with the existing ones.
++   *
++   * Setting `translations` to `null` fully deletes a language,
++   * its translations and its files.
++   *
++   * @see https://developer.apple.com/documentation/walletpasses/creating_the_source_for_a_pass#3736718
++   * @param lang
++   * @param translations
++   */
++  localize(lang, translations) {
++    assertUnfrozen(this);
++    if (typeof lang !== "string") {
++      throw new TypeError(
++        format(LANGUAGES.INVALID_LANG, typeof lang)
++      );
++    }
++    if (translations === null) {
++      delete this[localizationSymbol][lang];
++      const allFilesKeys = Object.keys(this[filesSymbol]);
++      const langFolderIdentifier = `${lang}.lproj`;
++      for (let i = allFilesKeys.length - 1; i >= 0; i--) {
++        const filePath = allFilesKeys[i];
++        if (filePath.startsWith(langFolderIdentifier)) {
++          delete this[filesSymbol][filePath];
++        }
++      }
++      return;
++    }
++    if (!translations || !Object.keys(translations).length) {
++      console.warn(
++        format(LANGUAGES.NO_TRANSLATIONS, lang)
++      );
++      return;
++    }
++    this[localizationSymbol][lang] ??= {};
++    if (typeof translations === "object" && !Array.isArray(translations)) {
++      Object.assign(this[localizationSymbol][lang], translations);
++    }
++  }
++  /**
++   * Allows to specify an expiration date for the pass.
++   *
++   * Pass `null` to remove the expiration date.
++   *
++   * @param date
++   * @throws if pass is frozen due to previous export
++   * @returns
++   */
++  setExpirationDate(date) {
++    assertUnfrozen(this);
++    if (date === null) {
++      delete this[propsSymbol]["expirationDate"];
++      return;
++    }
++    try {
++      this[propsSymbol]["expirationDate"] = processDate(date);
++    } catch (err) {
++      throw new TypeError(
++        format(DATE.INVALID, "expirationDate", date)
++      );
++    }
++  }
++  setBeacons(...beacons) {
++    assertUnfrozen(this);
++    if (beacons[0] === null) {
++      delete this[propsSymbol]["beacons"];
++      return;
++    }
++    this[propsSymbol]["beacons"] = filterValid(
++      Beacon,
++      beacons
++    );
++  }
++  setLocations(...locations) {
++    assertUnfrozen(this);
++    if (locations[0] === null) {
++      delete this[propsSymbol]["locations"];
++      return;
++    }
++    this[propsSymbol]["locations"] = filterValid(
++      Location,
++      locations
++    );
++  }
++  /**
++   * Allows setting a relevant date in which the OS
++   * should show this pass.
++   *
++   * Pass `null` to remove relevant date from this pass.
++   *
++   * @param {Date | null} date
++   * @throws if pass is frozen due to previous export
++   */
++  setRelevantDate(date) {
++    assertUnfrozen(this);
++    if (date === null) {
++      delete this[propsSymbol]["relevantDate"];
++      return;
++    }
++    try {
++      this[propsSymbol]["relevantDate"] = processDate(date);
++    } catch (err) {
++      throw new TypeError(
++        format(DATE.INVALID, "relevantDate", date)
++      );
++    }
++  }
++  setBarcodes(...barcodes) {
++    assertUnfrozen(this);
++    if (!barcodes.length) {
++      return;
++    }
++    if (barcodes[0] === null) {
++      delete this[propsSymbol]["barcodes"];
++      return;
++    }
++    let finalBarcodes;
++    if (typeof barcodes[0] === "string") {
++      const supportedFormats = [
++        "PKBarcodeFormatQR",
++        "PKBarcodeFormatPDF417",
++        "PKBarcodeFormatAztec",
++        "PKBarcodeFormatCode128"
++      ];
++      finalBarcodes = supportedFormats.map(
++        (format2) => validate(Barcode, {
++          format: format2,
++          message: barcodes[0]
++        })
++      );
++    } else {
++      finalBarcodes = filterValid(
++        Barcode,
++        barcodes
++      );
++    }
++    this[propsSymbol]["barcodes"] = finalBarcodes;
++  }
++  /**
++   * Allows to specify details to make this, an
++   * NFC-capable pass.
++   *
++   * Pass `null` as parameter to remove it at all.
++   *
++   * @see https://developer.apple.com/documentation/walletpasses/pass/nfc
++   * @param data
++   * @throws if pass is frozen due to previous export
++   * @returns
++   */
++  setNFC(nfc) {
++    assertUnfrozen(this);
++    if (nfc === null) {
++      delete this[propsSymbol]["nfc"];
++      return;
++    }
++    this[propsSymbol]["nfc"] = validate(NFC, nfc) ?? void 0;
++  }
++};
++function validateJSONBuffer(buffer, schema) {
++  let contentAsJSON;
++  try {
++    contentAsJSON = JSON.parse(buffer.toString("utf8"));
++  } catch (err) {
++    throw new TypeError(JSON2.INVALID);
++  }
++  return validate(schema, contentAsJSON);
++}
++
++// src/index.ts
++var src_default = { PKPass };
++export {
++  PKPass,
++  src_default as default
++};
+diff --git a/lib/messages.d.ts b/lib/messages.d.ts
+index b7fe38721af67555e92378d24918d5b40962f04e..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/messages.d.ts
++++ b/lib/messages.d.ts
+@@ -1,70 +0,0 @@
+-export declare const INIT: {
+-    readonly INVALID_BUFFERS: "Cannot set buffers in constructor: expected object but received %s";
+-};
+-export declare const CERTIFICATES: {
+-    readonly INVALID: "Invalid certificate(s) loaded. %s. Please provide valid WWDR certificates and developer signer certificate and key (with passphrase).\nRefer to docs to obtain them";
+-};
+-export declare const TRANSIT_TYPE: {
+-    readonly UNEXPECTED_PASS_TYPE: "Cannot set transitType on a pass with type different from boardingPass.";
+-    readonly INVALID: "Cannot set transitType because not compliant with Apple specifications. Refer to https://apple.co/3DHuAG4 for more - %s";
+-};
+-export declare const PASS_TYPE: {
+-    readonly INVALID: "Cannot set type because not compliant with Apple specifications. Refer to https://apple.co/3aFpSfg for a list of valid props - %s";
+-};
+-export declare const TEMPLATE: {
+-    readonly INVALID: "Cannot create pass from a template. %s";
+-};
+-export declare const FILTER_VALID: {
+-    readonly INVALID: "Cannot validate property. %s";
+-};
+-export declare const FIELDS: {
+-    readonly INVALID: "Cannot add field. %s";
+-    readonly REPEATED_KEY: "Cannot add field with key '%s': another field already owns this key. Ignored.";
+-};
+-export declare const DATE: {
+-    readonly INVALID: "Cannot set %s. Invalid date %s";
+-};
+-export declare const LANGUAGES: {
+-    readonly INVALID_LANG: "Cannot set localization. Expected a string for 'lang' but received %s";
+-    readonly NO_TRANSLATIONS: "Cannot create or use language %s. If your itention was to just add a language (.lproj) folder to the bundle, both specify some translations or use .addBuffer to add some media.";
+-};
+-export declare const BARCODES: {
+-    readonly INVALID_POST: "";
+-};
+-export declare const PASS_SOURCE: {
+-    readonly INVALID: "Cannot add pass.json to bundle because it is invalid. %s";
+-    readonly UNKNOWN_TYPE: "Cannot find a valid type in pass.json. You won't be able to set fields until you won't set explicitly one.";
+-    readonly JOIN: "The imported pass.json's properties will be joined with the current setted props. You might lose some data.";
+-};
+-export declare const PERSONALIZE: {
+-    readonly INVALID: "Cannot add personalization.json to bundle because it is invalid. %s";
+-};
+-export declare const JSON: {
+-    readonly INVALID: "Cannot parse JSON. Invalid file";
+-};
+-export declare const CLOSE: {
+-    readonly MISSING_TYPE: "Cannot proceed creating the pass because type is missing.";
+-    readonly MISSING_ICON: "At least one icon file is missing in your bundle. Your pass won't be openable by any Apple Device.";
+-    readonly PERSONALIZATION_REMOVED: "Personalization file '%s' have been removed from the bundle as the requirements for personalization are not met.";
+-    readonly MISSING_TRANSIT_TYPE: "Cannot proceed creating the pass because transitType is missing on your boardingPass.";
+-};
+-export declare const MODELS: {
+-    readonly DIR_NOT_FOUND: "Cannot import model: directory %s not found.";
+-    readonly FILE_NO_OPEN: "Cannot open model file. %s";
+-};
+-export declare const BUNDLE: {
+-    readonly MIME_TYPE_MISSING: "Cannot build Bundle. MimeType is missing";
+-    readonly CLOSED: "Cannot add file or set property. Bundle is closed.";
+-};
+-export declare const FROM: {
+-    readonly MISSING_SOURCE: "Cannot create PKPass from source: source is '%s'";
+-};
+-export declare const PACK: {
+-    readonly INVALID: "Cannot pack passes. Only PKPass instances allowed";
+-};
+-/**
+- * Creates a message with replaced values
+- * @param messageName
+- * @param values
+- */
+-export declare function format(messageName: string, ...values: any[]): string;
+diff --git a/lib/messages.js b/lib/messages.js
+index ef3ce9912680ade8d6ede2156bec73bbb6a17916..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/messages.js
++++ b/lib/messages.js
+@@ -1,79 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.format = exports.PACK = exports.FROM = exports.BUNDLE = exports.MODELS = exports.CLOSE = exports.JSON = exports.PERSONALIZE = exports.PASS_SOURCE = exports.BARCODES = exports.LANGUAGES = exports.DATE = exports.FIELDS = exports.FILTER_VALID = exports.TEMPLATE = exports.PASS_TYPE = exports.TRANSIT_TYPE = exports.CERTIFICATES = exports.INIT = void 0;
+-exports.INIT = {
+-    INVALID_BUFFERS: "Cannot set buffers in constructor: expected object but received %s",
+-};
+-exports.CERTIFICATES = {
+-    INVALID: "Invalid certificate(s) loaded. %s. Please provide valid WWDR certificates and developer signer certificate and key (with passphrase).\nRefer to docs to obtain them",
+-};
+-exports.TRANSIT_TYPE = {
+-    UNEXPECTED_PASS_TYPE: "Cannot set transitType on a pass with type different from boardingPass.",
+-    INVALID: "Cannot set transitType because not compliant with Apple specifications. Refer to https://apple.co/3DHuAG4 for more - %s",
+-};
+-exports.PASS_TYPE = {
+-    INVALID: "Cannot set type because not compliant with Apple specifications. Refer to https://apple.co/3aFpSfg for a list of valid props - %s",
+-};
+-exports.TEMPLATE = {
+-    INVALID: "Cannot create pass from a template. %s",
+-};
+-exports.FILTER_VALID = {
+-    INVALID: "Cannot validate property. %s",
+-};
+-exports.FIELDS = {
+-    INVALID: "Cannot add field. %s",
+-    REPEATED_KEY: "Cannot add field with key '%s': another field already owns this key. Ignored.",
+-};
+-exports.DATE = {
+-    INVALID: "Cannot set %s. Invalid date %s",
+-};
+-exports.LANGUAGES = {
+-    INVALID_LANG: "Cannot set localization. Expected a string for 'lang' but received %s",
+-    NO_TRANSLATIONS: "Cannot create or use language %s. If your itention was to just add a language (.lproj) folder to the bundle, both specify some translations or use .addBuffer to add some media.",
+-};
+-exports.BARCODES = {
+-    INVALID_POST: "",
+-};
+-exports.PASS_SOURCE = {
+-    INVALID: "Cannot add pass.json to bundle because it is invalid. %s",
+-    UNKNOWN_TYPE: "Cannot find a valid type in pass.json. You won't be able to set fields until you won't set explicitly one.",
+-    JOIN: "The imported pass.json's properties will be joined with the current setted props. You might lose some data.",
+-};
+-exports.PERSONALIZE = {
+-    INVALID: "Cannot add personalization.json to bundle because it is invalid. %s",
+-};
+-exports.JSON = {
+-    INVALID: "Cannot parse JSON. Invalid file",
+-};
+-exports.CLOSE = {
+-    MISSING_TYPE: "Cannot proceed creating the pass because type is missing.",
+-    MISSING_ICON: "At least one icon file is missing in your bundle. Your pass won't be openable by any Apple Device.",
+-    PERSONALIZATION_REMOVED: "Personalization file '%s' have been removed from the bundle as the requirements for personalization are not met.",
+-    MISSING_TRANSIT_TYPE: "Cannot proceed creating the pass because transitType is missing on your boardingPass.",
+-};
+-exports.MODELS = {
+-    DIR_NOT_FOUND: "Cannot import model: directory %s not found.",
+-    FILE_NO_OPEN: "Cannot open model file. %s",
+-};
+-exports.BUNDLE = {
+-    MIME_TYPE_MISSING: "Cannot build Bundle. MimeType is missing",
+-    CLOSED: "Cannot add file or set property. Bundle is closed.",
+-};
+-exports.FROM = {
+-    MISSING_SOURCE: "Cannot create PKPass from source: source is '%s'",
+-};
+-exports.PACK = {
+-    INVALID: "Cannot pack passes. Only PKPass instances allowed",
+-};
+-/**
+- * Creates a message with replaced values
+- * @param messageName
+- * @param values
+- */
+-function format(messageName, ...values) {
+-    // reversing because it is better popping than shifting.
+-    const replaceValues = values.reverse();
+-    return messageName.replace(/%s/g, () => replaceValues.pop());
+-}
+-exports.format = format;
+-//# sourceMappingURL=messages.js.map
+\ No newline at end of file
+diff --git a/lib/schemas/Barcode.d.ts b/lib/schemas/Barcode.d.ts
+index 8798ce141b591435542f47f96ad1448157911ff9..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Barcode.d.ts
++++ b/lib/schemas/Barcode.d.ts
+@@ -1,12 +0,0 @@
+-import Joi from "joi";
+-/**
+- * @see https://developer.apple.com/documentation/walletpasses/pass/barcodes
+- */
+-export type BarcodeFormat = "PKBarcodeFormatQR" | "PKBarcodeFormatPDF417" | "PKBarcodeFormatAztec" | "PKBarcodeFormatCode128";
+-export interface Barcode {
+-    altText?: string;
+-    messageEncoding?: string;
+-    format: BarcodeFormat;
+-    message: string;
+-}
+-export declare const Barcode: Joi.ObjectSchema<Barcode>;
+diff --git a/lib/schemas/Barcode.js b/lib/schemas/Barcode.js
+index b7ca14452fd41f48d865f950cf83c7445123dda4..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Barcode.js
++++ b/lib/schemas/Barcode.js
+@@ -1,14 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.Barcode = void 0;
+-const tslib_1 = require("tslib");
+-const joi_1 = tslib_1.__importDefault(require("joi"));
+-exports.Barcode = joi_1.default.object().keys({
+-    altText: joi_1.default.string(),
+-    messageEncoding: joi_1.default.string().default("iso-8859-1"),
+-    format: joi_1.default.string()
+-        .required()
+-        .regex(/(PKBarcodeFormatQR|PKBarcodeFormatPDF417|PKBarcodeFormatAztec|PKBarcodeFormatCode128)/, "barcodeType"),
+-    message: joi_1.default.string().required(),
+-});
+-//# sourceMappingURL=Barcode.js.map
+\ No newline at end of file
+diff --git a/lib/schemas/Beacon.d.ts b/lib/schemas/Beacon.d.ts
+index 75aadd6dbc352f48a72bb3c501c57b3938a15a6e..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Beacon.d.ts
++++ b/lib/schemas/Beacon.d.ts
+@@ -1,11 +0,0 @@
+-import Joi from "joi";
+-/**
+- * @see https://developer.apple.com/documentation/walletpasses/pass/beacons
+- */
+-export interface Beacon {
+-    major?: number;
+-    minor?: number;
+-    relevantText?: string;
+-    proximityUUID: string;
+-}
+-export declare const Beacon: Joi.ObjectSchema<Beacon>;
+diff --git a/lib/schemas/Beacon.js b/lib/schemas/Beacon.js
+index 0c1fe461d8330ccd584ab5d203e65cb47a45bac9..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Beacon.js
++++ b/lib/schemas/Beacon.js
+@@ -1,12 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.Beacon = void 0;
+-const tslib_1 = require("tslib");
+-const joi_1 = tslib_1.__importDefault(require("joi"));
+-exports.Beacon = joi_1.default.object().keys({
+-    major: joi_1.default.number().integer().min(0).max(65535),
+-    minor: joi_1.default.number().integer().min(0).max(65535),
+-    proximityUUID: joi_1.default.string().required(),
+-    relevantText: joi_1.default.string(),
+-});
+-//# sourceMappingURL=Beacon.js.map
+\ No newline at end of file
+diff --git a/lib/schemas/Certificates.d.ts b/lib/schemas/Certificates.d.ts
+index 78ffe3efe5f9f17f42a5eb3c4fa8e9b30e048208..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Certificates.d.ts
++++ b/lib/schemas/Certificates.d.ts
+@@ -1,10 +0,0 @@
+-/// <reference types="node" />
+-import { Buffer } from "buffer";
+-import Joi from "joi";
+-export interface CertificatesSchema {
+-    wwdr: string | Buffer;
+-    signerCert: string | Buffer;
+-    signerKey: string | Buffer;
+-    signerKeyPassphrase?: string;
+-}
+-export declare const CertificatesSchema: Joi.ObjectSchema<CertificatesSchema>;
+diff --git a/lib/schemas/Certificates.js b/lib/schemas/Certificates.js
+index 5fea9e4ae075a7b7a0a5bac8845972bece0bdcbc..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Certificates.js
++++ b/lib/schemas/Certificates.js
+@@ -1,22 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.CertificatesSchema = void 0;
+-const tslib_1 = require("tslib");
+-const buffer_1 = require("buffer");
+-const joi_1 = tslib_1.__importDefault(require("joi"));
+-/**
+- * Joi.binary is not available in browser-like environments (like Cloudflare workers)
+- * so we fallback to manual checking. Buffer must be polyfilled.
+- */
+-const binary = joi_1.default.binary
+-    ? joi_1.default.binary()
+-    : joi_1.default.custom((obj) => buffer_1.Buffer.isBuffer(obj));
+-exports.CertificatesSchema = joi_1.default.object()
+-    .keys({
+-    wwdr: joi_1.default.alternatives(binary, joi_1.default.string()).required(),
+-    signerCert: joi_1.default.alternatives(binary, joi_1.default.string()).required(),
+-    signerKey: joi_1.default.alternatives(binary, joi_1.default.string()).required(),
+-    signerKeyPassphrase: joi_1.default.string(),
+-})
+-    .required();
+-//# sourceMappingURL=Certificates.js.map
+\ No newline at end of file
+diff --git a/lib/schemas/Field.d.ts b/lib/schemas/Field.d.ts
+index fb9c79bd71f779fe79a85938903116acafed251f..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Field.d.ts
++++ b/lib/schemas/Field.d.ts
+@@ -1,30 +0,0 @@
+-import Joi from "joi";
+-import { Semantics } from "./Semantics";
+-export type PKDataDetectorType = "PKDataDetectorTypePhoneNumber" | "PKDataDetectorTypeLink" | "PKDataDetectorTypeAddress" | "PKDataDetectorTypeCalendarEvent";
+-export type PKTextAlignmentType = "PKTextAlignmentLeft" | "PKTextAlignmentCenter" | "PKTextAlignmentRight" | "PKTextAlignmentNatural";
+-export type PKDateStyleType = "PKDateStyleNone" | "PKDateStyleShort" | "PKDateStyleMedium" | "PKDateStyleLong" | "PKDateStyleFull";
+-export type PKNumberStyleType = "PKNumberStyleDecimal" | "PKNumberStylePercent" | "PKNumberStyleScientific" | "PKNumberStyleSpellOut";
+-/**
+- * @see https://developer.apple.com/documentation/walletpasses/passfieldcontent
+- */
+-export interface Field {
+-    attributedValue?: string | number | Date;
+-    changeMessage?: string;
+-    dataDetectorTypes?: PKDataDetectorType[];
+-    label?: string;
+-    textAlignment?: PKTextAlignmentType;
+-    key: string;
+-    value: string | number | Date;
+-    semantics?: Semantics;
+-    dateStyle?: PKDateStyleType;
+-    ignoresTimeZone?: boolean;
+-    isRelative?: boolean;
+-    timeStyle?: string;
+-    currencyCode?: string;
+-    numberStyle?: PKNumberStyleType;
+-}
+-export interface FieldWithRow extends Field {
+-    row?: 0 | 1;
+-}
+-export declare const Field: Joi.ObjectSchema<Field>;
+-export declare const FieldWithRow: Joi.ObjectSchema<Field>;
+diff --git a/lib/schemas/Field.js b/lib/schemas/Field.js
+index a40c067da6078e2b93a815bdcc94455432cb884a..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Field.js
++++ b/lib/schemas/Field.js
+@@ -1,36 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.FieldWithRow = exports.Field = void 0;
+-const tslib_1 = require("tslib");
+-const joi_1 = tslib_1.__importDefault(require("joi"));
+-const Semantics_1 = require("./Semantics");
+-exports.Field = joi_1.default.object().keys({
+-    attributedValue: joi_1.default.alternatives(joi_1.default.string().allow(""), joi_1.default.number(), joi_1.default.date().iso()),
+-    changeMessage: joi_1.default.string(),
+-    dataDetectorTypes: joi_1.default.array().items(joi_1.default.string().regex(/(PKDataDetectorTypePhoneNumber|PKDataDetectorTypeLink|PKDataDetectorTypeAddress|PKDataDetectorTypeCalendarEvent)/, "dataDetectorType")),
+-    label: joi_1.default.string().allow(""),
+-    textAlignment: joi_1.default.string().regex(/(PKTextAlignmentLeft|PKTextAlignmentCenter|PKTextAlignmentRight|PKTextAlignmentNatural)/, "graphic-alignment"),
+-    key: joi_1.default.string().required(),
+-    value: joi_1.default.alternatives(joi_1.default.string().allow(""), joi_1.default.number(), joi_1.default.date().iso()).required(),
+-    semantics: Semantics_1.Semantics,
+-    // date fields formatters, all optionals
+-    dateStyle: joi_1.default.string().regex(/(PKDateStyleNone|PKDateStyleShort|PKDateStyleMedium|PKDateStyleLong|PKDateStyleFull)/, "date style"),
+-    ignoresTimeZone: joi_1.default.boolean(),
+-    isRelative: joi_1.default.boolean(),
+-    timeStyle: joi_1.default.string().regex(/(PKDateStyleNone|PKDateStyleShort|PKDateStyleMedium|PKDateStyleLong|PKDateStyleFull)/, "date style"),
+-    // number fields formatters, all optionals
+-    currencyCode: joi_1.default.string().when("value", {
+-        is: joi_1.default.number(),
+-        otherwise: joi_1.default.string().forbidden(),
+-    }),
+-    numberStyle: joi_1.default.string()
+-        .regex(/(PKNumberStyleDecimal|PKNumberStylePercent|PKNumberStyleScientific|PKNumberStyleSpellOut)/)
+-        .when("value", {
+-        is: joi_1.default.number(),
+-        otherwise: joi_1.default.string().forbidden(),
+-    }),
+-});
+-exports.FieldWithRow = exports.Field.concat(joi_1.default.object().keys({
+-    row: joi_1.default.number().min(0).max(1),
+-}));
+-//# sourceMappingURL=Field.js.map
+\ No newline at end of file
+diff --git a/lib/schemas/Location.d.ts b/lib/schemas/Location.d.ts
+index 029cb29c0bdda491e3475269c202c2545b2e2704..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Location.d.ts
++++ b/lib/schemas/Location.d.ts
+@@ -1,11 +0,0 @@
+-import Joi from "joi";
+-/**
+- * @see https://developer.apple.com/documentation/walletpasses/pass/locations
+- */
+-export interface Location {
+-    relevantText?: string;
+-    altitude?: number;
+-    latitude: number;
+-    longitude: number;
+-}
+-export declare const Location: Joi.ObjectSchema<Location>;
+diff --git a/lib/schemas/Location.js b/lib/schemas/Location.js
+index 1500661470eb7e2a6fe20191fd021c3bbb451567..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Location.js
++++ b/lib/schemas/Location.js
+@@ -1,12 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.Location = void 0;
+-const tslib_1 = require("tslib");
+-const joi_1 = tslib_1.__importDefault(require("joi"));
+-exports.Location = joi_1.default.object().keys({
+-    altitude: joi_1.default.number(),
+-    latitude: joi_1.default.number().required(),
+-    longitude: joi_1.default.number().required(),
+-    relevantText: joi_1.default.string(),
+-});
+-//# sourceMappingURL=Location.js.map
+\ No newline at end of file
+diff --git a/lib/schemas/NFC.d.ts b/lib/schemas/NFC.d.ts
+index c1f713824744290093f6d161e50515ad755a4279..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/NFC.d.ts
++++ b/lib/schemas/NFC.d.ts
+@@ -1,10 +0,0 @@
+-import Joi from "joi";
+-/**
+- * @see https://developer.apple.com/documentation/walletpasses/pass/nfc
+- */
+-export interface NFC {
+-    message: string;
+-    encryptionPublicKey: string;
+-    requiresAuthentication?: boolean;
+-}
+-export declare const NFC: Joi.ObjectSchema<NFC>;
+diff --git a/lib/schemas/NFC.js b/lib/schemas/NFC.js
+index 090d2dda1e2facd6cd35a2f3fa3435b99dc71c95..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/NFC.js
++++ b/lib/schemas/NFC.js
+@@ -1,11 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.NFC = void 0;
+-const tslib_1 = require("tslib");
+-const joi_1 = tslib_1.__importDefault(require("joi"));
+-exports.NFC = joi_1.default.object().keys({
+-    message: joi_1.default.string().required().max(64),
+-    encryptionPublicKey: joi_1.default.string().required(),
+-    requiresAuthentication: joi_1.default.boolean(),
+-});
+-//# sourceMappingURL=NFC.js.map
+\ No newline at end of file
+diff --git a/lib/schemas/PassFields.d.ts b/lib/schemas/PassFields.d.ts
+index 7b65827a05fd41a46abb993971276640327c4eca..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/PassFields.d.ts
++++ b/lib/schemas/PassFields.d.ts
+@@ -1,13 +0,0 @@
+-import Joi from "joi";
+-import { Field, FieldWithRow } from "./Field";
+-export type TransitType = "PKTransitTypeAir" | "PKTransitTypeBoat" | "PKTransitTypeBus" | "PKTransitTypeGeneric" | "PKTransitTypeTrain";
+-export declare const TransitType: Joi.StringSchema;
+-export interface PassFields {
+-    auxiliaryFields: FieldWithRow[];
+-    backFields: Field[];
+-    headerFields: Field[];
+-    primaryFields: Field[];
+-    secondaryFields: Field[];
+-    transitType?: TransitType;
+-}
+-export declare const PassFields: Joi.ObjectSchema<PassFields>;
+diff --git a/lib/schemas/PassFields.js b/lib/schemas/PassFields.js
+index 60b0876b2f52ab697cf5ff693600c1bc67c711a9..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/PassFields.js
++++ b/lib/schemas/PassFields.js
+@@ -1,16 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.PassFields = exports.TransitType = void 0;
+-const tslib_1 = require("tslib");
+-const joi_1 = tslib_1.__importDefault(require("joi"));
+-const Field_1 = require("./Field");
+-exports.TransitType = joi_1.default.string().regex(/(PKTransitTypeAir|PKTransitTypeBoat|PKTransitTypeBus|PKTransitTypeGeneric|PKTransitTypeTrain)/);
+-exports.PassFields = joi_1.default.object().keys({
+-    auxiliaryFields: joi_1.default.array().items(Field_1.FieldWithRow),
+-    backFields: joi_1.default.array().items(Field_1.Field),
+-    headerFields: joi_1.default.array().items(Field_1.Field),
+-    primaryFields: joi_1.default.array().items(Field_1.Field),
+-    secondaryFields: joi_1.default.array().items(Field_1.Field),
+-    transitType: exports.TransitType,
+-});
+-//# sourceMappingURL=PassFields.js.map
+\ No newline at end of file
+diff --git a/lib/schemas/Personalize.d.ts b/lib/schemas/Personalize.d.ts
+index e9d28bd993bd7aa0fdc5d0245e93cd78aed0fe45..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Personalize.d.ts
++++ b/lib/schemas/Personalize.d.ts
+@@ -1,12 +0,0 @@
+-import Joi from "joi";
+-/**
+- * @see https://developer.apple.com/documentation/walletpasses/personalize
+- */
+-type RequiredPersonalizationFields = "PKPassPersonalizationFieldName" | "PKPassPersonalizationFieldPostalCode" | "PKPassPersonalizationFieldEmailAddress" | "PKPassPersonalizationFieldPhoneNumber";
+-export interface Personalize {
+-    description: string;
+-    requiredPersonalizationFields: RequiredPersonalizationFields[];
+-    termsAndConditions?: string;
+-}
+-export declare const Personalize: Joi.ObjectSchema<Personalize>;
+-export {};
+diff --git a/lib/schemas/Personalize.js b/lib/schemas/Personalize.js
+index 24450567b1e8a8349d78c0d2bd6503ad2e6c7bcc..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Personalize.js
++++ b/lib/schemas/Personalize.js
+@@ -1,13 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.Personalize = void 0;
+-const tslib_1 = require("tslib");
+-const joi_1 = tslib_1.__importDefault(require("joi"));
+-exports.Personalize = joi_1.default.object().keys({
+-    description: joi_1.default.string().required(),
+-    requiredPersonalizationFields: joi_1.default.array()
+-        .items("PKPassPersonalizationFieldName", "PKPassPersonalizationFieldPostalCode", "PKPassPersonalizationFieldEmailAddress", "PKPassPersonalizationFieldPhoneNumber")
+-        .required(),
+-    termsAndConditions: joi_1.default.string(),
+-});
+-//# sourceMappingURL=Personalize.js.map
+\ No newline at end of file
+diff --git a/lib/schemas/Semantics.d.ts b/lib/schemas/Semantics.d.ts
+index efd626a86c7eaea834928b0129d8e8e05438bf3e..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Semantics.d.ts
++++ b/lib/schemas/Semantics.d.ts
+@@ -1,116 +0,0 @@
+-import Joi from "joi";
+-/**
+- * For a better description of every single field,
+- * please refer to Apple official documentation.
+- *
+- * @see https://developer.apple.com/documentation/walletpasses/semantictags
+- */
+-/**
+- * @see https://developer.apple.com/documentation/walletpasses/semantictagtype
+- */
+-declare namespace SemanticTagType {
+-    interface PersonNameComponents {
+-        familyName?: string;
+-        givenName?: string;
+-        middleName?: string;
+-        namePrefix?: string;
+-        nameSuffix?: string;
+-        nickname?: string;
+-        phoneticRepresentation?: string;
+-    }
+-    interface CurrencyAmount {
+-        currencyCode?: string;
+-        amount?: string;
+-    }
+-    interface Location {
+-        latitude: number;
+-        longitude: number;
+-    }
+-    interface Seat {
+-        seatSection?: string;
+-        seatRow?: string;
+-        seatNumber?: string;
+-        seatIdentifier?: string;
+-        seatType?: string;
+-        seatDescription?: string;
+-    }
+-    interface WifiNetwork {
+-        password: string;
+-        ssid: string;
+-    }
+-}
+-/**
+- * Alphabetical order
+- * @see https://developer.apple.com/documentation/walletpasses/semantictags
+- */
+-export interface Semantics {
+-    airlineCode?: string;
+-    artistIDs?: string[];
+-    awayTeamAbbreviation?: string;
+-    awayTeamLocation?: string;
+-    awayTeamName?: string;
+-    balance?: SemanticTagType.CurrencyAmount;
+-    boardingGroup?: string;
+-    boardingSequenceNumber?: string;
+-    carNumber?: string;
+-    confirmationNumber?: string;
+-    currentArrivalDate?: string;
+-    currentBoardingDate?: string;
+-    currentDepartureDate?: string;
+-    departureAirportCode?: string;
+-    departureAirportName?: string;
+-    departureGate?: string;
+-    departureLocation?: SemanticTagType.Location;
+-    departureLocationDescription?: string;
+-    departurePlatform?: string;
+-    departureStationName?: string;
+-    departureTerminal?: string;
+-    destinationAirportCode?: string;
+-    destinationAirportName?: string;
+-    destinationGate?: string;
+-    destinationLocation?: SemanticTagType.Location;
+-    destinationLocationDescription?: string;
+-    destinationPlatform?: string;
+-    destinationStationName?: string;
+-    destinationTerminal?: string;
+-    duration?: number;
+-    eventEndDate?: string;
+-    eventName?: string;
+-    eventStartDate?: string;
+-    eventType?: "PKEventTypeGeneric" | "PKEventTypeLivePerformance" | "PKEventTypeMovie" | "PKEventTypeSports" | "PKEventTypeConference" | "PKEventTypeConvention" | "PKEventTypeWorkshop" | "PKEventTypeSocialGathering";
+-    flightCode?: string;
+-    flightNumber?: number;
+-    genre?: string;
+-    homeTeamAbbreviation?: string;
+-    homeTeamLocation?: string;
+-    homeTeamName?: string;
+-    leagueAbbreviation?: string;
+-    leagueName?: string;
+-    membershipProgramName?: string;
+-    membershipProgramNumber?: string;
+-    originalArrivalDate?: string;
+-    originalBoardingDate?: string;
+-    originalDepartureDate?: string;
+-    passengerName?: SemanticTagType.PersonNameComponents;
+-    performerNames?: string[];
+-    priorityStatus?: string;
+-    seats?: SemanticTagType.Seat[];
+-    securityScreening?: string;
+-    silenceRequested?: boolean;
+-    sportName?: string;
+-    totalPrice?: SemanticTagType.CurrencyAmount;
+-    transitProvider?: string;
+-    transitStatus?: string;
+-    transitStatusReason?: string;
+-    vehicleName?: string;
+-    vehicleNumber?: string;
+-    vehicleType?: string;
+-    venueEntrance?: string;
+-    venueLocation?: SemanticTagType.Location;
+-    venueName?: string;
+-    venuePhoneNumber?: string;
+-    venueRoom?: string;
+-    wifiAccess?: SemanticTagType.WifiNetwork[];
+-}
+-export declare const Semantics: Joi.ObjectSchema<Semantics>;
+-export {};
+diff --git a/lib/schemas/Semantics.js b/lib/schemas/Semantics.js
+index e86932bd7b31f2f60c3fdf9465913521e5b3922a..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/Semantics.js
++++ b/lib/schemas/Semantics.js
+@@ -1,104 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.Semantics = void 0;
+-const tslib_1 = require("tslib");
+-const joi_1 = tslib_1.__importDefault(require("joi"));
+-const CurrencyAmount = joi_1.default.object().keys({
+-    currencyCode: joi_1.default.string(),
+-    amount: joi_1.default.string(),
+-});
+-const PersonNameComponent = joi_1.default.object().keys({
+-    givenName: joi_1.default.string(),
+-    familyName: joi_1.default.string(),
+-    middleName: joi_1.default.string(),
+-    namePrefix: joi_1.default.string(),
+-    nameSuffix: joi_1.default.string(),
+-    nickname: joi_1.default.string(),
+-    phoneticRepresentation: joi_1.default.string(),
+-});
+-const seat = joi_1.default.object().keys({
+-    seatSection: joi_1.default.string(),
+-    seatRow: joi_1.default.string(),
+-    seatNumber: joi_1.default.string(),
+-    seatIdentifier: joi_1.default.string(),
+-    seatType: joi_1.default.string(),
+-    seatDescription: joi_1.default.string(),
+-});
+-const location = joi_1.default.object().keys({
+-    latitude: joi_1.default.number().required(),
+-    longitude: joi_1.default.number().required(),
+-});
+-const WifiNetwork = joi_1.default.object().keys({
+-    password: joi_1.default.string().required(),
+-    ssid: joi_1.default.string().required(),
+-});
+-exports.Semantics = joi_1.default.object().keys({
+-    airlineCode: joi_1.default.string(),
+-    artistIDs: joi_1.default.array().items(joi_1.default.string()),
+-    awayTeamAbbreviation: joi_1.default.string(),
+-    awayTeamLocation: joi_1.default.string(),
+-    awayTeamName: joi_1.default.string(),
+-    balance: CurrencyAmount,
+-    boardingGroup: joi_1.default.string(),
+-    boardingSequenceNumber: joi_1.default.string(),
+-    carNumber: joi_1.default.string(),
+-    confirmationNumber: joi_1.default.string(),
+-    currentArrivalDate: joi_1.default.string(),
+-    currentBoardingDate: joi_1.default.string(),
+-    currentDepartureDate: joi_1.default.string(),
+-    departureAirportCode: joi_1.default.string(),
+-    departureAirportName: joi_1.default.string(),
+-    departureGate: joi_1.default.string(),
+-    departureLocation: location,
+-    departureLocationDescription: joi_1.default.string(),
+-    departurePlatform: joi_1.default.string(),
+-    departureStationName: joi_1.default.string(),
+-    departureTerminal: joi_1.default.string(),
+-    destinationAirportCode: joi_1.default.string(),
+-    destinationAirportName: joi_1.default.string(),
+-    destinationGate: joi_1.default.string(),
+-    destinationLocation: location,
+-    destinationLocationDescription: joi_1.default.string(),
+-    destinationPlatform: joi_1.default.string(),
+-    destinationStationName: joi_1.default.string(),
+-    destinationTerminal: joi_1.default.string(),
+-    duration: joi_1.default.number(),
+-    eventEndDate: joi_1.default.string(),
+-    eventName: joi_1.default.string(),
+-    eventStartDate: joi_1.default.string(),
+-    eventType: joi_1.default.string().regex(/(PKEventTypeGeneric|PKEventTypeLivePerformance|PKEventTypeMovie|PKEventTypeSports|PKEventTypeConference|PKEventTypeConvention|PKEventTypeWorkshop|PKEventTypeSocialGathering)/),
+-    flightCode: joi_1.default.string(),
+-    flightNumber: joi_1.default.number(),
+-    genre: joi_1.default.string(),
+-    homeTeamAbbreviation: joi_1.default.string(),
+-    homeTeamLocation: joi_1.default.string(),
+-    homeTeamName: joi_1.default.string(),
+-    leagueAbbreviation: joi_1.default.string(),
+-    leagueName: joi_1.default.string(),
+-    membershipProgramName: joi_1.default.string(),
+-    membershipProgramNumber: joi_1.default.string(),
+-    originalArrivalDate: joi_1.default.string(),
+-    originalBoardingDate: joi_1.default.string(),
+-    originalDepartureDate: joi_1.default.string(),
+-    passengerName: PersonNameComponent,
+-    performerNames: joi_1.default.array().items(joi_1.default.string()),
+-    priorityStatus: joi_1.default.string(),
+-    seats: joi_1.default.array().items(seat),
+-    securityScreening: joi_1.default.string(),
+-    silenceRequested: joi_1.default.boolean(),
+-    sportName: joi_1.default.string(),
+-    totalPrice: CurrencyAmount,
+-    transitProvider: joi_1.default.string(),
+-    transitStatus: joi_1.default.string(),
+-    transitStatusReason: joi_1.default.string(),
+-    vehicleName: joi_1.default.string(),
+-    vehicleNumber: joi_1.default.string(),
+-    vehicleType: joi_1.default.string(),
+-    venueEntrance: joi_1.default.string(),
+-    venueLocation: location,
+-    venueName: joi_1.default.string(),
+-    venuePhoneNumber: joi_1.default.string(),
+-    venueRoom: joi_1.default.string(),
+-    wifiAccess: joi_1.default.array().items(WifiNetwork),
+-});
+-//# sourceMappingURL=Semantics.js.map
+\ No newline at end of file
+diff --git a/lib/schemas/index.d.ts b/lib/schemas/index.d.ts
+index aed0835d0cc2e6843bcd026557027b91e5e557aa..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/index.d.ts
++++ b/lib/schemas/index.d.ts
+@@ -1,103 +0,0 @@
+-/// <reference types="node" />
+-export * from "./Barcode";
+-export * from "./Beacon";
+-export * from "./Location";
+-export * from "./Field";
+-export * from "./NFC";
+-export * from "./Semantics";
+-export * from "./PassFields";
+-export * from "./Personalize";
+-export * from "./Certificates";
+-import Joi from "joi";
+-import { Buffer } from "buffer";
+-import { Barcode } from "./Barcode";
+-import { Location } from "./Location";
+-import { Beacon } from "./Beacon";
+-import { NFC } from "./NFC";
+-import { PassFields, TransitType } from "./PassFields";
+-import { Semantics } from "./Semantics";
+-import { CertificatesSchema } from "./Certificates";
+-export interface FileBuffers {
+-    [key: string]: Buffer;
+-}
+-export interface PassProps {
+-    formatVersion?: 1;
+-    serialNumber?: string;
+-    description?: string;
+-    organizationName?: string;
+-    passTypeIdentifier?: string;
+-    teamIdentifier?: string;
+-    appLaunchURL?: string;
+-    voided?: boolean;
+-    userInfo?: {
+-        [key: string]: any;
+-    };
+-    sharingProhibited?: boolean;
+-    groupingIdentifier?: string;
+-    suppressStripShine?: boolean;
+-    logoText?: string;
+-    maxDistance?: number;
+-    semantics?: Semantics;
+-    webServiceURL?: string;
+-    associatedStoreIdentifiers?: Array<number>;
+-    authenticationToken?: string;
+-    backgroundColor?: string;
+-    foregroundColor?: string;
+-    labelColor?: string;
+-    nfc?: NFC;
+-    beacons?: Beacon[];
+-    barcodes?: Barcode[];
+-    relevantDate?: string;
+-    expirationDate?: string;
+-    locations?: Location[];
+-    boardingPass?: PassFields & {
+-        transitType: TransitType;
+-    };
+-    eventTicket?: PassFields;
+-    coupon?: PassFields;
+-    generic?: PassFields;
+-    storeCard?: PassFields;
+-}
+-/**
+- * These are the properties passkit-generator will
+- * handle through its methods
+- */
+-type PassMethodsProps = "nfc" | "beacons" | "barcodes" | "relevantDate" | "expirationDate" | "locations";
+-export type PassTypesProps = "boardingPass" | "eventTicket" | "coupon" | "generic" | "storeCard";
+-export type OverridablePassProps = Omit<PassProps, PassMethodsProps | PassTypesProps>;
+-export type PassPropsFromMethods = {
+-    [K in PassMethodsProps]: PassProps[K];
+-};
+-export type PassKindsProps = {
+-    [K in PassTypesProps]: PassProps[K];
+-};
+-export type PassColors = Pick<OverridablePassProps, "backgroundColor" | "foregroundColor" | "labelColor">;
+-export declare const PassPropsFromMethods: Joi.ObjectSchema<PassPropsFromMethods>;
+-export declare const PassKindsProps: Joi.ObjectSchema<PassKindsProps>;
+-export declare const PassType: Joi.StringSchema;
+-export declare const OverridablePassProps: Joi.ObjectSchema<OverridablePassProps>;
+-export declare const PassProps: Joi.ObjectSchema<OverridablePassProps & PassKindsProps & PassPropsFromMethods>;
+-export interface Template {
+-    model: string;
+-    certificates?: CertificatesSchema;
+-}
+-export declare const Template: Joi.ObjectSchema<Template>;
+-/**
+- * Performs validation of a schema on an object.
+- * If it fails, will throw an error.
+- *
+- * @param schema
+- * @param data
+- */
+-export declare function assertValidity<T>(schema: Joi.ObjectSchema<T> | Joi.StringSchema, data: T, customErrorMessage?: string): void;
+-/**
+- * Performs validation and throws the error if there's one.
+- * Otherwise returns a (possibly patched) version of the specified
+- * options (it depends on the schema)
+- *
+- * @param schema
+- * @param options
+- * @returns
+- */
+-export declare function validate<T extends Object>(schema: Joi.ObjectSchema<T> | Joi.StringSchema, options: T): T;
+-export declare function filterValid<T extends Object>(schema: Joi.ObjectSchema<T>, source: T[]): T[];
+diff --git a/lib/schemas/index.js b/lib/schemas/index.js
+index ae78bccac1642d36b65445d20527b9174fea7167..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/schemas/index.js
++++ b/lib/schemas/index.js
+@@ -1,125 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.filterValid = exports.validate = exports.assertValidity = exports.Template = exports.PassProps = exports.OverridablePassProps = exports.PassType = exports.PassKindsProps = exports.PassPropsFromMethods = void 0;
+-const tslib_1 = require("tslib");
+-tslib_1.__exportStar(require("./Barcode"), exports);
+-tslib_1.__exportStar(require("./Beacon"), exports);
+-tslib_1.__exportStar(require("./Location"), exports);
+-tslib_1.__exportStar(require("./Field"), exports);
+-tslib_1.__exportStar(require("./NFC"), exports);
+-tslib_1.__exportStar(require("./Semantics"), exports);
+-tslib_1.__exportStar(require("./PassFields"), exports);
+-tslib_1.__exportStar(require("./Personalize"), exports);
+-tslib_1.__exportStar(require("./Certificates"), exports);
+-const joi_1 = tslib_1.__importDefault(require("joi"));
+-const Barcode_1 = require("./Barcode");
+-const Location_1 = require("./Location");
+-const Beacon_1 = require("./Beacon");
+-const NFC_1 = require("./NFC");
+-const PassFields_1 = require("./PassFields");
+-const Semantics_1 = require("./Semantics");
+-const Messages = tslib_1.__importStar(require("../messages"));
+-const RGB_COLOR_REGEX = /rgb\(\s*(?:[01]?[0-9][0-9]?|2[0-4][0-9]|25[0-5])\s*,\s*(?:[01]?[0-9][0-9]?|2[0-4][0-9]|25[0-5])\s*,\s*(?:[01]?[0-9][0-9]?|2[0-4][0-9]|25[0-5])\s*\)/;
+-exports.PassPropsFromMethods = joi_1.default.object({
+-    nfc: NFC_1.NFC,
+-    beacons: joi_1.default.array().items(Beacon_1.Beacon),
+-    barcodes: joi_1.default.array().items(Barcode_1.Barcode),
+-    relevantDate: joi_1.default.string().isoDate(),
+-    expirationDate: joi_1.default.string().isoDate(),
+-    locations: joi_1.default.array().items(Location_1.Location),
+-});
+-exports.PassKindsProps = joi_1.default.object({
+-    coupon: PassFields_1.PassFields.disallow("transitType"),
+-    generic: PassFields_1.PassFields.disallow("transitType"),
+-    storeCard: PassFields_1.PassFields.disallow("transitType"),
+-    eventTicket: PassFields_1.PassFields.disallow("transitType"),
+-    boardingPass: PassFields_1.PassFields,
+-});
+-exports.PassType = joi_1.default.string().regex(/(boardingPass|coupon|eventTicket|storeCard|generic)/);
+-exports.OverridablePassProps = joi_1.default.object({
+-    formatVersion: joi_1.default.number().default(1),
+-    semantics: Semantics_1.Semantics,
+-    voided: joi_1.default.boolean(),
+-    logoText: joi_1.default.string(),
+-    description: joi_1.default.string(),
+-    serialNumber: joi_1.default.string(),
+-    appLaunchURL: joi_1.default.string(),
+-    teamIdentifier: joi_1.default.string(),
+-    organizationName: joi_1.default.string(),
+-    passTypeIdentifier: joi_1.default.string(),
+-    sharingProhibited: joi_1.default.boolean(),
+-    groupingIdentifier: joi_1.default.string(),
+-    suppressStripShine: joi_1.default.boolean(),
+-    maxDistance: joi_1.default.number().positive(),
+-    authenticationToken: joi_1.default.string().min(16),
+-    labelColor: joi_1.default.string().regex(RGB_COLOR_REGEX),
+-    backgroundColor: joi_1.default.string().regex(RGB_COLOR_REGEX),
+-    foregroundColor: joi_1.default.string().regex(RGB_COLOR_REGEX),
+-    associatedStoreIdentifiers: joi_1.default.array().items(joi_1.default.number()),
+-    userInfo: joi_1.default.alternatives(joi_1.default.object().unknown(), joi_1.default.array()),
+-    // parsing url as set of words and nums followed by dots, optional port and any possible path after
+-    webServiceURL: joi_1.default.string().regex(/https?:\/\/(?:[a-z0-9]+\.?)+(?::\d{2,})?(?:\/[\S]+)*/),
+-}).with("webServiceURL", "authenticationToken");
+-exports.PassProps = joi_1.default.object()
+-    .concat(exports.OverridablePassProps)
+-    .concat(exports.PassKindsProps)
+-    .concat(exports.PassPropsFromMethods);
+-exports.Template = joi_1.default.object({
+-    model: joi_1.default.string().required(),
+-    certificates: joi_1.default.object().required(),
+-});
+-// --------- UTILITIES ---------- //
+-/**
+- * Performs validation of a schema on an object.
+- * If it fails, will throw an error.
+- *
+- * @param schema
+- * @param data
+- */
+-function assertValidity(schema, data, customErrorMessage) {
+-    const validation = schema.validate(data);
+-    if (validation.error) {
+-        if (customErrorMessage) {
+-            console.warn(validation.error);
+-            throw new TypeError(`${validation.error.name} happened. ${Messages.format(customErrorMessage, validation.error.message)}`);
+-        }
+-        throw new TypeError(validation.error.message);
+-    }
+-}
+-exports.assertValidity = assertValidity;
+-/**
+- * Performs validation and throws the error if there's one.
+- * Otherwise returns a (possibly patched) version of the specified
+- * options (it depends on the schema)
+- *
+- * @param schema
+- * @param options
+- * @returns
+- */
+-function validate(schema, options) {
+-    const validationResult = schema.validate(options, {
+-        stripUnknown: true,
+-        abortEarly: true,
+-    });
+-    if (validationResult.error) {
+-        throw validationResult.error;
+-    }
+-    return validationResult.value;
+-}
+-exports.validate = validate;
+-function filterValid(schema, source) {
+-    if (!source) {
+-        return [];
+-    }
+-    return source.reduce((acc, current) => {
+-        try {
+-            return [...acc, validate(schema, current)];
+-        }
+-        catch (err) {
+-            console.warn(Messages.format(Messages.FILTER_VALID.INVALID, err));
+-            return [...acc];
+-        }
+-    }, []);
+-}
+-exports.filterValid = filterValid;
+-//# sourceMappingURL=index.js.map
+\ No newline at end of file
+diff --git a/lib/utils.d.ts b/lib/utils.d.ts
+index 7288b26deed3e4b4e872a7b1a3289726d998abcc..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/utils.d.ts
++++ b/lib/utils.d.ts
+@@ -1,24 +0,0 @@
+-import type Bundle from "./Bundle";
+-/**
+- * Converts a date to W3C / UTC string
+- * @param date
+- * @returns
+- */
+-export declare function processDate(date: Date): string | undefined;
+-/**
+- * Removes hidden files from a list (those starting with dot)
+- *
+- * @params from - list of file names
+- * @return
+- */
+-export declare function removeHidden(from: Array<string>): Array<string>;
+-/**
+- * Clones recursively an object and all of its properties
+- *
+- * @param object
+- * @returns
+- */
+-export declare function cloneRecursive<T extends Object>(object: T): Record<keyof T, any>;
+-export declare function assertUnfrozen(instance: InstanceType<typeof Bundle>): asserts instance is Bundle & {
+-    isFrozen: false;
+-};
+diff --git a/lib/utils.js b/lib/utils.js
+index 5bad13b6a0deca715b225bc9d98c4cc62034740c..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+--- a/lib/utils.js
++++ b/lib/utils.js
+@@ -1,66 +0,0 @@
+-"use strict";
+-Object.defineProperty(exports, "__esModule", { value: true });
+-exports.assertUnfrozen = exports.cloneRecursive = exports.removeHidden = exports.processDate = void 0;
+-const tslib_1 = require("tslib");
+-const Messages = tslib_1.__importStar(require("./messages"));
+-/**
+- * Converts a date to W3C / UTC string
+- * @param date
+- * @returns
+- */
+-function processDate(date) {
+-    if (!(date instanceof Date) || Number.isNaN(Number(date))) {
+-        throw "Invalid date";
+-    }
+-    /**
+-     * @see https://www.w3.org/TR/NOTE-datetime
+-     */
+-    return date.toISOString();
+-}
+-exports.processDate = processDate;
+-/**
+- * Removes hidden files from a list (those starting with dot)
+- *
+- * @params from - list of file names
+- * @return
+- */
+-function removeHidden(from) {
+-    return from.filter((e) => e.charAt(0) !== ".");
+-}
+-exports.removeHidden = removeHidden;
+-/**
+- * Clones recursively an object and all of its properties
+- *
+- * @param object
+- * @returns
+- */
+-function cloneRecursive(object) {
+-    const objectCopy = {};
+-    const objectEntries = Object.entries(object);
+-    for (let i = 0; i < objectEntries.length; i++) {
+-        const [key, value] = objectEntries[i];
+-        if (value && typeof value === "object") {
+-            if (Array.isArray(value)) {
+-                objectCopy[key] = value.slice();
+-                for (let j = 0; j < value.length; j++) {
+-                    objectCopy[key][j] = cloneRecursive(value[j]);
+-                }
+-            }
+-            else {
+-                objectCopy[key] = cloneRecursive(value);
+-            }
+-        }
+-        else {
+-            objectCopy[key] = value;
+-        }
+-    }
+-    return objectCopy;
+-}
+-exports.cloneRecursive = cloneRecursive;
+-function assertUnfrozen(instance) {
+-    if (instance.isFrozen) {
+-        throw new Error(Messages.BUNDLE.CLOSED);
+-    }
+-}
+-exports.assertUnfrozen = assertUnfrozen;
+-//# sourceMappingURL=utils.js.map
+\ No newline at end of file
+diff --git a/package.json b/package.json
+index 740de8625c8b509dc76756b9eb22bc6ab6c0ed3e..3b060f106628749ddbebacde4f1d082b5f90a5d1 100644
+--- a/package.json
++++ b/package.json
+@@ -3,6 +3,7 @@
+ 	"version": "3.1.11",
+ 	"description": "The easiest way to generate custom Apple Wallet passes in Node.js",
+ 	"main": "lib/index.js",
++	"type": "module",
+ 	"scripts": {
+ 		"build": "npm run build:src",
+ 		"build:all": "npm run build:src && npm run build:examples",

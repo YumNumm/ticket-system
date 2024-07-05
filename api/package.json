@@ -2,14 +2,23 @@
   "name": "api",
   "scripts": {
     "dev": "wrangler dev src/index.ts",
-    "deploy": "wrangler deploy --minify src/index.ts"
+    "deploy": "wrangler deploy --minify src/index.ts",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.44.2",
-    "hono": "^4.4.11"
+    "hono": "^4.4.11",
+    "passkit-generator": "^3.1.11"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240529.0",
+    "patch-package": "^8.0.0",
     "wrangler": "^3.57.2"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "passkit-generator@3.1.11": "patches/passkit-generator@3.1.11.patch",
+      "do-not-zip@1.0.0": "patches/do-not-zip@1.0.0.patch"
+    }
   }
 }

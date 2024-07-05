@@ -1,5 +1,6 @@
 # prod
 dist/
+/certs
 
 # dev
 .yarn/
