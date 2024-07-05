@@ -43,4 +43,3 @@ SECURITY DEFINER SET search_path TO 'public';
 CREATE POLICY "Only admin can ALL on attendances" ON public.attendances
     FOR ALL
         USING (ROLE () = 'admin');
-
