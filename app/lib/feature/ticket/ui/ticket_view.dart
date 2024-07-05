@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:file_picker/_internal/file_picker_web.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -299,10 +299,7 @@ class AvatarView extends HookConsumerWidget {
             ),
           );
           try {
-            final pickedFile = await FilePicker.platform.pickFiles(
-              type: FileType.image,
-              withData: true,
-            );
+            final pickedFile = await FilePickerWeb.platform.pickFiles();
             if (pickedFile == null) {
               log('Error: pickedFile is null');
               return;
