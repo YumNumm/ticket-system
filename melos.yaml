@@ -2,7 +2,7 @@ name: ticket_system_workspace
 sdkPath: .fvm/flutter_sdk
 
 packages:
-  - app/
+  - apps/*
   - packages/*
 
 command:

@@ -1027,14 +1027,14 @@ packages:
   ticket_api:
     dependency: "direct main"
     description:
-      path: "../packages/ticket_api"
+      path: "../../packages/ticket_api"
       relative: true
     source: path
     version: "0.0.0"
   ticket_database:
     dependency: "direct main"
     description:
-      path: "../packages/ticket_database"
+      path: "../../packages/ticket_database"
       relative: true
     source: path
     version: "0.0.0"
