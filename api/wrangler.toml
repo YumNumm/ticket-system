@@ -1,5 +1,5 @@
 name = "ticket-system-api"
-compatibility_date = "2023-12-01"
+compatibility_date = "2024-07-04"
 
 account_id = "4270d8a14dfc1f866629099a788c93e2"
 main = "src/index.ts"
