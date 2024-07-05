@@ -18,6 +18,6 @@ class Attendances with _$Attendances {
 
 enum AttendanceStatus {
   present,
-  absent,
+  leave,
   ;
 }

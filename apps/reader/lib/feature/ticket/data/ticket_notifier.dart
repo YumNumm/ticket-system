@@ -17,3 +17,12 @@ class TicketNotifier extends _$TicketNotifier {
     return repository.ticket(userId: currentUser.id);
   }
 }
+
+@riverpod
+Future<Purchases?> ticketFromUserId(
+  TicketFromUserIdRef ref,
+  String userId,
+) async {
+  final repository = ref.watch(ticketRepositoryProvider);
+  return repository.ticket(userId: userId);
+}

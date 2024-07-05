@@ -36,5 +36,5 @@ Map<String, dynamic> _$$AttendancesImplToJson(_$AttendancesImpl instance) =>
 
 const _$AttendanceStatusEnumMap = {
   AttendanceStatus.present: 'present',
-  AttendanceStatus.absent: 'absent',
+  AttendanceStatus.leave: 'leave',
 };

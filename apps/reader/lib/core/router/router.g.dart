@@ -21,12 +21,14 @@ RouteBase get $homeRoute => GoRouteData.$route(
           factory: $LoginRouteExtension._fromState,
         ),
         GoRouteData.$route(
-          path: 'on_purchased',
-          factory: $OnPurchasedRouteExtension._fromState,
-        ),
-        GoRouteData.$route(
-          path: 'edit_profile',
-          factory: $EditProfileRouteExtension._fromState,
+          path: 'reader',
+          factory: $ReaderRouteExtension._fromState,
+          routes: [
+            GoRouteData.$route(
+              path: 'on_detected',
+              factory: $OnDetectedRouteExtension._fromState,
+            ),
+          ],
         ),
       ],
     );
@@ -65,16 +67,11 @@ extension $LoginRouteExtension on LoginRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
-extension $OnPurchasedRouteExtension on OnPurchasedRoute {
-  static OnPurchasedRoute _fromState(GoRouterState state) => OnPurchasedRoute(
-        sessionId: state.uri.queryParameters['session-id']!,
-      );
+extension $ReaderRouteExtension on ReaderRoute {
+  static ReaderRoute _fromState(GoRouterState state) => const ReaderRoute();
 
   String get location => GoRouteData.$location(
-        '/on_purchased',
-        queryParams: {
-          'session-id': sessionId,
-        },
+        '/reader',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -87,12 +84,16 @@ extension $OnPurchasedRouteExtension on OnPurchasedRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
-extension $EditProfileRouteExtension on EditProfileRoute {
-  static EditProfileRoute _fromState(GoRouterState state) =>
-      const EditProfileRoute();
+extension $OnDetectedRouteExtension on OnDetectedRoute {
+  static OnDetectedRoute _fromState(GoRouterState state) => OnDetectedRoute(
+        userId: state.uri.queryParameters['user-id']!,
+      );
 
   String get location => GoRouteData.$location(
-        '/edit_profile',
+        '/reader/on_detected',
+        queryParams: {
+          'user-id': userId,
+        },
       );
 
   void go(BuildContext context) => context.go(location);

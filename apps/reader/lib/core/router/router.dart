@@ -8,8 +8,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ticket_reader/feature/auth/data/supabase_auth.dart';
 import 'package:ticket_reader/feature/auth/ui/login_page.dart';
 import 'package:ticket_reader/feature/home/ui/home_page.dart';
-import 'package:ticket_reader/feature/profile/ui/edit_profile_page.dart';
-import 'package:ticket_reader/feature/purchase/ui/on_purchased_page.dart';
+import 'package:ticket_reader/feature/reader/ui/on_detected_page.dart';
+import 'package:ticket_reader/feature/reader/ui/reader_page.dart';
 
 part 'router.g.dart';
 
@@ -48,11 +48,13 @@ GoRouter router(RouterRef ref) {
     TypedGoRoute<LoginRoute>(
       path: 'login',
     ),
-    TypedGoRoute<OnPurchasedRoute>(
-      path: 'on_purchased',
-    ),
-    TypedGoRoute<EditProfileRoute>(
-      path: 'edit_profile',
+    TypedGoRoute<ReaderRoute>(
+      path: 'reader',
+      routes: [
+        TypedGoRoute<OnDetectedRoute>(
+          path: 'on_detected',
+        ),
+      ],
     ),
   ],
 )

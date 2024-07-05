@@ -2,13 +2,14 @@
 
 // ignore_for_file: type=lint, duplicate_ignore
 
-part of 'ticket_notifier.dart';
+part of 'attendance_notifier.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$ticketFromUserIdHash() => r'a3a2aa11a2b3194997f04247817fe0cc54fa2813';
+String _$attendanceNotifierHash() =>
+    r'e24d6615a49afa48a1aeb5b1c8b84106192d3ea9';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -31,14 +32,23 @@ class _SystemHash {
   }
 }
 
-/// See also [ticketFromUserId].
-@ProviderFor(ticketFromUserId)
-const ticketFromUserIdProvider = TicketFromUserIdFamily();
+abstract class _$AttendanceNotifier
+    extends BuildlessAutoDisposeAsyncNotifier<List<Attendances>> {
+  late final String userId;
 
-/// See also [ticketFromUserId].
-class TicketFromUserIdFamily extends Family {
-  /// See also [ticketFromUserId].
-  const TicketFromUserIdFamily();
+  FutureOr<List<Attendances>> build(
+    String userId,
+  );
+}
+
+/// See also [AttendanceNotifier].
+@ProviderFor(AttendanceNotifier)
+const attendanceNotifierProvider = AttendanceNotifierFamily();
+
+/// See also [AttendanceNotifier].
+class AttendanceNotifierFamily extends Family {
+  /// See also [AttendanceNotifier].
+  const AttendanceNotifierFamily();
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
 
@@ -52,21 +62,21 @@ class TicketFromUserIdFamily extends Family {
       _allTransitiveDependencies;
 
   @override
-  String? get name => r'ticketFromUserIdProvider';
+  String? get name => r'attendanceNotifierProvider';
 
-  /// See also [ticketFromUserId].
-  TicketFromUserIdProvider call(
+  /// See also [AttendanceNotifier].
+  AttendanceNotifierProvider call(
     String userId,
   ) {
-    return TicketFromUserIdProvider(
+    return AttendanceNotifierProvider(
       userId,
     );
   }
 
   @visibleForOverriding
   @override
-  TicketFromUserIdProvider getProviderOverride(
-    covariant TicketFromUserIdProvider provider,
+  AttendanceNotifierProvider getProviderOverride(
+    covariant AttendanceNotifierProvider provider,
   ) {
     return call(
       provider.userId,
@@ -74,51 +84,48 @@ class TicketFromUserIdFamily extends Family {
   }
 
   /// Enables overriding the behavior of this provider, no matter the parameters.
-  Override overrideWith(
-      FutureOr<Purchases?> Function(TicketFromUserIdRef ref) create) {
-    return _$TicketFromUserIdFamilyOverride(this, create);
+  Override overrideWith(AttendanceNotifier Function() create) {
+    return _$AttendanceNotifierFamilyOverride(this, create);
   }
 }
 
-class _$TicketFromUserIdFamilyOverride implements FamilyOverride {
-  _$TicketFromUserIdFamilyOverride(this.overriddenFamily, this.create);
+class _$AttendanceNotifierFamilyOverride implements FamilyOverride {
+  _$AttendanceNotifierFamilyOverride(this.overriddenFamily, this.create);
 
-  final FutureOr<Purchases?> Function(TicketFromUserIdRef ref) create;
-
-  @override
-  final TicketFromUserIdFamily overriddenFamily;
+  final AttendanceNotifier Function() create;
 
   @override
-  TicketFromUserIdProvider getProviderOverride(
-    covariant TicketFromUserIdProvider provider,
+  final AttendanceNotifierFamily overriddenFamily;
+
+  @override
+  AttendanceNotifierProvider getProviderOverride(
+    covariant AttendanceNotifierProvider provider,
   ) {
     return provider._copyWith(create);
   }
 }
 
-/// See also [ticketFromUserId].
-class TicketFromUserIdProvider extends AutoDisposeFutureProvider<Purchases?> {
-  /// See also [ticketFromUserId].
-  TicketFromUserIdProvider(
+/// See also [AttendanceNotifier].
+class AttendanceNotifierProvider extends AutoDisposeAsyncNotifierProviderImpl<
+    AttendanceNotifier, List<Attendances>> {
+  /// See also [AttendanceNotifier].
+  AttendanceNotifierProvider(
     String userId,
   ) : this._internal(
-          (ref) => ticketFromUserId(
-            ref as TicketFromUserIdRef,
-            userId,
-          ),
-          from: ticketFromUserIdProvider,
-          name: r'ticketFromUserIdProvider',
+          () => AttendanceNotifier()..userId = userId,
+          from: attendanceNotifierProvider,
+          name: r'attendanceNotifierProvider',
           debugGetCreateSourceHash:
               const bool.fromEnvironment('dart.vm.product')
                   ? null
-                  : _$ticketFromUserIdHash,
-          dependencies: TicketFromUserIdFamily._dependencies,
+                  : _$attendanceNotifierHash,
+          dependencies: AttendanceNotifierFamily._dependencies,
           allTransitiveDependencies:
-              TicketFromUserIdFamily._allTransitiveDependencies,
+              AttendanceNotifierFamily._allTransitiveDependencies,
           userId: userId,
         );
 
-  TicketFromUserIdProvider._internal(
+  AttendanceNotifierProvider._internal(
     super.create, {
     required super.name,
     required super.dependencies,
@@ -131,13 +138,20 @@ class TicketFromUserIdProvider extends AutoDisposeFutureProvider<Purchases?> {
   final String userId;
 
   @override
-  Override overrideWith(
-    FutureOr<Purchases?> Function(TicketFromUserIdRef ref) create,
+  FutureOr<List<Attendances>> runNotifierBuild(
+    covariant AttendanceNotifier notifier,
   ) {
+    return notifier.build(
+      userId,
+    );
+  }
+
+  @override
+  Override overrideWith(AttendanceNotifier Function() create) {
     return ProviderOverride(
       origin: this,
-      override: TicketFromUserIdProvider._internal(
-        (ref) => create(ref as TicketFromUserIdRef),
+      override: AttendanceNotifierProvider._internal(
+        () => create()..userId = userId,
         from: from,
         name: null,
         dependencies: null,
@@ -154,15 +168,16 @@ class TicketFromUserIdProvider extends AutoDisposeFutureProvider<Purchases?> {
   }
 
   @override
-  AutoDisposeFutureProviderElement<Purchases?> createElement() {
-    return _TicketFromUserIdProviderElement(this);
+  AutoDisposeAsyncNotifierProviderElement<AttendanceNotifier, List<Attendances>>
+      createElement() {
+    return _AttendanceNotifierProviderElement(this);
   }
 
-  TicketFromUserIdProvider _copyWith(
-    FutureOr<Purchases?> Function(TicketFromUserIdRef ref) create,
+  AttendanceNotifierProvider _copyWith(
+    AttendanceNotifier Function() create,
   ) {
-    return TicketFromUserIdProvider._internal(
-      (ref) => create(ref as TicketFromUserIdRef),
+    return AttendanceNotifierProvider._internal(
+      () => create()..userId = userId,
       name: name,
       dependencies: dependencies,
       allTransitiveDependencies: allTransitiveDependencies,
@@ -174,7 +189,7 @@ class TicketFromUserIdProvider extends AutoDisposeFutureProvider<Purchases?> {
 
   @override
   bool operator ==(Object other) {
-    return other is TicketFromUserIdProvider && other.userId == userId;
+    return other is AttendanceNotifierProvider && other.userId == userId;
   }
 
   @override
@@ -186,35 +201,19 @@ class TicketFromUserIdProvider extends AutoDisposeFutureProvider<Purchases?> {
   }
 }
 
-mixin TicketFromUserIdRef on AutoDisposeFutureProviderRef<Purchases?> {
+mixin AttendanceNotifierRef
+    on AutoDisposeAsyncNotifierProviderRef<List<Attendances>> {
   /// The parameter `userId` of this provider.
   String get userId;
 }
 
-class _TicketFromUserIdProviderElement
-    extends AutoDisposeFutureProviderElement<Purchases?>
-    with TicketFromUserIdRef {
-  _TicketFromUserIdProviderElement(super.provider);
+class _AttendanceNotifierProviderElement
+    extends AutoDisposeAsyncNotifierProviderElement<AttendanceNotifier,
+        List<Attendances>> with AttendanceNotifierRef {
+  _AttendanceNotifierProviderElement(super.provider);
 
   @override
-  String get userId => (origin as TicketFromUserIdProvider).userId;
+  String get userId => (origin as AttendanceNotifierProvider).userId;
 }
-
-String _$ticketNotifierHash() => r'a52cea881a6846fa9e83545573814d974556c8e7';
-
-/// See also [TicketNotifier].
-@ProviderFor(TicketNotifier)
-final ticketNotifierProvider =
-    AutoDisposeAsyncNotifierProvider<TicketNotifier, Purchases?>.internal(
-  TicketNotifier.new,
-  name: r'ticketNotifierProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$ticketNotifierHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-typedef _$TicketNotifier = AutoDisposeAsyncNotifier<Purchases?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, inference_failure_on_uninitialized_variable, inference_failure_on_function_return_type, inference_failure_on_untyped_parameter, deprecated_member_use_from_same_package

@@ -81,3 +81,9 @@ class ProfileNotifier extends _$ProfileNotifier {
     state = AsyncData(result);
   }
 }
+
+@riverpod
+Future<Profiles> profileFromId(ProfileFromIdRef ref, String userid) async {
+  final repository = ref.watch(profileRepositoryProvider);
+  return repository.getProfile(userId: userid);
+}

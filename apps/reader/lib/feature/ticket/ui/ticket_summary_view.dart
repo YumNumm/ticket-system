@@ -4,15 +4,13 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:ticket_database_types/models/profiles.dart';
 import 'package:ticket_database_types/models/purchases.dart';
 import 'package:ticket_reader/core/env/env.dart';
-import 'package:ticket_reader/core/router/router.dart';
 import 'package:ticket_reader/feature/profile/data/profile_notifier.dart';
-import 'package:ticket_reader/feature/profile/ui/edit_profile_page.dart';
 import 'package:ticket_reader/feature/purchase/ui/component/buy_ticket_card.dart';
 import 'package:ticket_reader/feature/ticket/data/ticket_notifier.dart';
 import 'package:url_launcher/link.dart';
 
-class TicketView extends ConsumerWidget {
-  const TicketView({super.key});
+class TicketSummaryView extends ConsumerWidget {
+  const TicketSummaryView({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -60,13 +58,13 @@ class TicketView extends ConsumerWidget {
             ),
           ),
         ),
-      AsyncData(:final value) => _TicketView(profile: value),
+      AsyncData(:final value) => _TicketSummaryViewBody(profile: value),
     };
   }
 }
 
-class _TicketView extends ConsumerWidget {
-  const _TicketView({
+class _TicketSummaryViewBody extends ConsumerWidget {
+  const _TicketSummaryViewBody({
     required this.profile,
   });
 
@@ -119,7 +117,7 @@ class _TicketView extends ConsumerWidget {
             ),
           ),
         ),
-      AsyncData(:final value) when value != null => _TicketCard(
+      AsyncData(:final value) when value != null => TicketView(
           purchase: value,
           profile: profile,
         ),
@@ -128,10 +126,11 @@ class _TicketView extends ConsumerWidget {
   }
 }
 
-class _TicketCard extends StatelessWidget {
-  const _TicketCard({
+class TicketView extends StatelessWidget {
+  const TicketView({
     required this.purchase,
     required this.profile,
+    super.key,
   });
 
   final Purchases purchase;
@@ -142,7 +141,59 @@ class _TicketCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final card = Card(
+    final card = TicketCard(profile: profile, purchase: purchase);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primaryContainer.withOpacity(0.8),
+                  blurRadius: 12,
+                ),
+              ],
+            ),
+            child: card,
+          ),
+        ),
+        const SizedBox(height: 16),
+        const SizedBox(height: 16),
+        Link(
+          uri: Uri.parse(
+            '${Env.apiBaseUrl}/ticket/apple?ticket_id=${purchase.sessionId}&user_id=${profile.id}',
+          ),
+          builder: (context, followLink) => FloatingActionButton.extended(
+            label: const Text('Apple Walletに追加する'),
+            onPressed: () async => followLink?.call(),
+            icon: const Icon(Icons.apple),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class TicketCard extends StatelessWidget {
+  const TicketCard({
+    required this.profile,
+    required this.purchase,
+    this.showAvatar = true,
+    super.key,
+  });
+
+  final Profiles profile;
+  final Purchases purchase;
+  final bool showAvatar;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Card(
       color: Colors.transparent,
       clipBehavior: Clip.antiAlias,
       child: DecoratedBox(
@@ -211,54 +262,11 @@ class _TicketCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              AvatarView(profile: profile),
+              if (showAvatar) AvatarView(profile: profile),
             ],
           ),
         ),
       ),
-    );
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          children: [
-            const Spacer(),
-            FilledButton.tonalIcon(
-              label: const Text('プロフィールを編集する'),
-              icon: const Icon(Icons.edit),
-              onPressed: () async =>
-                  const EditProfileRoute().push<void>(context),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primaryContainer.withOpacity(0.8),
-                  blurRadius: 12,
-                ),
-              ],
-            ),
-            child: card,
-          ),
-        ),
-        const SizedBox(height: 16),
-        const SizedBox(height: 16),
-        Link(
-          uri: Uri.parse(
-            '${Env.apiBaseUrl}/ticket/apple?ticket_id=${purchase.sessionId}&user_id=${profile.id}',
-          ),
-          builder: (context, followLink) => FloatingActionButton.extended(
-            label: const Text('Apple Walletに追加する'),
-            onPressed: () async => followLink?.call(),
-            icon: const Icon(Icons.apple),
-          ),
-        ),
-      ],
     );
   }
 }
