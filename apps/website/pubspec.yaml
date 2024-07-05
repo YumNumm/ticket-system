@@ -22,9 +22,9 @@ dependencies:
   supabase_auth_ui: ^0.5.0
   supabase_flutter: ^2.5.7
   ticket_api:
-    path: ../packages/ticket_api
+    path: ../../packages/ticket_api
   ticket_database:
-    path: ../packages/ticket_database
+    path: ../../packages/ticket_database
   url_launcher: ^6.3.0
   uuid: ^4.4.0
 
