@@ -1,7 +1,15 @@
+import 'dart:async';
+import 'dart:developer';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ticket_app/core/env/env.dart';
+import 'package:ticket_app/core/router/router.dart';
 import 'package:ticket_app/feature/profile/data/profile_notifier.dart';
+import 'package:ticket_app/feature/profile/ui/edit_profile_page.dart';
 import 'package:ticket_app/feature/purchase/ui/component/buy_ticket_card.dart';
 import 'package:ticket_app/feature/ticket/data/ticket_notifier.dart';
 import 'package:ticket_database/models/profiles.dart';
@@ -150,7 +158,7 @@ class _TicketCard extends StatelessWidget {
               colorScheme.primaryContainer,
               Color.lerp(
                 colorScheme.primaryContainer,
-                colorScheme.surface,
+                colorScheme.surfaceContainerLowest,
                 0.5,
               )!,
             ],
@@ -179,43 +187,35 @@ class _TicketCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Flexible(
                       child: Text(
-                        profile.comment?.isEmpty ?? true
-                            ? 'NO COMMENT'
-                            : profile.comment!,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w200,
+                        profile.comment ?? '',
+                        style: GoogleFonts.robotoMono(
+                          fontWeight: FontWeight.w400,
                           color:
-                              colorScheme.onPrimaryContainer.withOpacity(0.7),
+                              colorScheme.onPrimaryContainer.withOpacity(0.8),
                         ),
                       ),
                     ),
                     const SizedBox(height: 48),
                     Text(
-                      "No. ${purchase.id.toString().padLeft(4, '0')}",
+                      "No. ${purchase.id.toString().padLeft(5, '0')}",
                       style: GoogleFonts.robotoMono(
                         fontSize: 16,
                         fontWeight: FontWeight.w200,
                         letterSpacing: 2,
+                        shadows: [
+                          Shadow(
+                            color:
+                                colorScheme.onPrimaryContainer.withOpacity(0.4),
+                            blurRadius: 4,
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 16),
-              CircleAvatar(
-                radius: 48,
-                backgroundImage: profile.avatarId != null
-                    // TODO(YumNumm): fix url
-                    ? NetworkImage(profile.avatarId!)
-                    : null,
-                child: profile.avatarId == null
-                    ? Icon(
-                        Icons.person,
-                        size: 48,
-                        color: colorScheme.onPrimaryContainer,
-                      )
-                    : null,
-              ),
+              _AvatarView(profile: profile),
             ],
           ),
         ),
@@ -255,7 +255,105 @@ class _TicketCard extends StatelessWidget {
             child: card,
           ),
         ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            const Spacer(),
+            FilledButton.tonalIcon(
+              label: const Text('プロフィールを編集する'),
+              icon: const Icon(Icons.edit),
+              onPressed: () async =>
+                  const EditProfileRoute().push<void>(context),
+            ),
+          ],
+        ),
       ],
+    );
+  }
+}
+
+class _AvatarView extends HookConsumerWidget {
+  const _AvatarView({
+    required this.profile,
+  });
+
+  final Profiles profile;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return PhysicalModel(
+      color: colorScheme.primaryContainer,
+      elevation: 1,
+      shape: BoxShape.circle,
+      child: InkWell(
+        onTap: () async {
+          unawaited(
+            showDialog(
+              context: context,
+              builder: (_) => const Center(
+                child: CircularProgressIndicator.adaptive(),
+              ),
+            ),
+          );
+          try {
+            final pickedFile = await FilePicker.platform.pickFiles(
+              type: FileType.image,
+              withData: true,
+            );
+            if (pickedFile == null) {
+              log('Error: pickedFile is null');
+              return;
+            }
+            final file = pickedFile.files.single;
+            final bytes = file.bytes;
+            if (bytes == null) {
+              log('Error: bytes is null');
+              return;
+            }
+            await ref.read(profileNotifierProvider.notifier).updateAvatar(
+                  bytes: bytes,
+                  path: file.name,
+                );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('画像をアップロードしました'),
+                ),
+              );
+            }
+          } on StorageException catch (e) {
+            log('Error: $e');
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('画像のアップロードに失敗しました ${e.message}'),
+                ),
+              );
+            }
+          } finally {
+            if (context.mounted && Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          }
+        },
+        child: CircleAvatar(
+          radius: 48,
+          backgroundImage: profile.avatarName != null
+              ? NetworkImage(
+                  '${Env.supabaseUrl}/storage/v1/object/public/${profile.avatarName!}',
+                )
+              : null,
+          child: profile.avatarName == null
+              ? Icon(
+                  Icons.person,
+                  size: 48,
+                  color: colorScheme.onPrimaryContainer,
+                )
+              : null,
+        ),
+      ),
     );
   }
 }

@@ -35,15 +35,18 @@ class _Drawer extends ConsumerWidget {
     return Drawer(
       child: ListView(
         children: [
-          UserAccountsDrawerHeader(
-            accountEmail: Text(currentUser?.email ?? ''),
-            accountName: Text(currentUser?.id ?? 'Logged out'),
-            currentAccountPicture: const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Colors.black, size: 24),
+          DefaultTextStyle(
+            style: TextStyle(
+              color: colorScheme.onPrimaryContainer,
             ),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
+            child: UserAccountsDrawerHeader(
+              accountEmail: Text(currentUser?.email ?? ''),
+              accountName: Text(currentUser?.id ?? 'Logged out'),
+              currentAccountPicture: const CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, color: Colors.black, size: 24),
+              ),
+              decoration: const BoxDecoration(),
             ),
           ),
           ListTile(

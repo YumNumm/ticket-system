@@ -14,18 +14,19 @@ List<RouteBase> get $appRoutes => [
 
 RouteBase get $homeRoute => GoRouteData.$route(
       path: '/',
-      name: 'home',
       factory: $HomeRouteExtension._fromState,
       routes: [
         GoRouteData.$route(
           path: 'login',
-          name: 'login',
           factory: $LoginRouteExtension._fromState,
         ),
         GoRouteData.$route(
           path: 'on_purchased',
-          name: 'on_purchased',
           factory: $OnPurchasedRouteExtension._fromState,
+        ),
+        GoRouteData.$route(
+          path: 'edit_profile',
+          factory: $EditProfileRouteExtension._fromState,
         ),
       ],
     );
@@ -74,6 +75,24 @@ extension $OnPurchasedRouteExtension on OnPurchasedRoute {
         queryParams: {
           'session-id': sessionId,
         },
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+extension $EditProfileRouteExtension on EditProfileRoute {
+  static EditProfileRoute _fromState(GoRouterState state) =>
+      const EditProfileRoute();
+
+  String get location => GoRouteData.$location(
+        '/edit_profile',
       );
 
   void go(BuildContext context) => context.go(location);

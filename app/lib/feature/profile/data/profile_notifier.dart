@@ -1,3 +1,6 @@
+import 'dart:developer';
+import 'dart:typed_data';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ticket_app/feature/auth/data/supabase_auth.dart';
 import 'package:ticket_app/feature/profile/data/profile_repository.dart';
@@ -20,42 +23,61 @@ class ProfileNotifier extends _$ProfileNotifier {
   Future<void> updateName({
     required String name,
   }) async {
+    state = const AsyncLoading<Profiles>().copyWithPrevious(state);
     final user = ref.read(currentUserProvider);
     if (user == null) {
       throw Exception('User is not logged in');
     }
     final repository = ref.read(profileRepositoryProvider);
-    await repository.updateProfile(
+    final result = await repository.updateProfile(
       userId: user.id,
-      name: name,
+      name: Value(name),
     );
+    state = AsyncData(result);
   }
 
   Future<void> updateAvatar({
-    required String avatarId,
+    required Uint8List bytes,
+    required String path,
   }) async {
+    state = const AsyncLoading<Profiles>().copyWithPrevious(state);
     final user = ref.read(currentUserProvider);
     if (user == null) {
       throw Exception('User is not logged in');
     }
     final repository = ref.read(profileRepositoryProvider);
-    await repository.updateProfile(
+    final uploadResult = await repository.uploadAvatar(
+      path: path,
+      bytes: bytes,
       userId: user.id,
-      avatarId: avatarId,
+      previousAvatarPath: state.valueOrNull?.avatarName,
     );
+    log('uploadResult: $uploadResult');
+    final avatarName = uploadResult;
+    log('avatarName: $avatarName');
+
+    final result = await repository.updateProfile(
+      userId: user.id,
+      avatarName: Value(avatarName),
+    );
+    log('updateAvatar: $result');
+    state = AsyncData(result);
   }
 
   Future<void> updateComment({
-    required String comment,
+    required String? comment,
   }) async {
+    state = const AsyncLoading<Profiles>().copyWithPrevious(state);
     final user = ref.read(currentUserProvider);
     if (user == null) {
       throw Exception('User is not logged in');
     }
+    log('comment: $comment, user: ${user.id}');
     final repository = ref.read(profileRepositoryProvider);
-    await repository.updateProfile(
+    final result = await repository.updateProfile(
       userId: user.id,
-      comment: comment,
+      comment: Value(comment),
     );
+    state = AsyncData(result);
   }
 }

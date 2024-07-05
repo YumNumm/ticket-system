@@ -23,6 +23,9 @@ Future<void> main() async {
     GoogleFonts.robotoMono(
       fontWeight: FontWeight.w200,
     ),
+    GoogleFonts.robotoMono(
+      fontWeight: FontWeight.w400,
+    ),
   ]);
 
   runApp(

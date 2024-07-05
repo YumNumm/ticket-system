@@ -22,7 +22,7 @@ Profiles _$ProfilesFromJson(Map<String, dynamic> json) {
 mixin _$Profiles {
   String get id => throw _privateConstructorUsedError;
   String? get name => throw _privateConstructorUsedError;
-  String? get avatarId => throw _privateConstructorUsedError;
+  String? get avatarName => throw _privateConstructorUsedError;
   String? get comment => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -36,7 +36,7 @@ abstract class $ProfilesCopyWith<$Res> {
   factory $ProfilesCopyWith(Profiles value, $Res Function(Profiles) then) =
       _$ProfilesCopyWithImpl<$Res, Profiles>;
   @useResult
-  $Res call({String id, String? name, String? avatarId, String? comment});
+  $Res call({String id, String? name, String? avatarName, String? comment});
 }
 
 /// @nodoc
@@ -54,7 +54,7 @@ class _$ProfilesCopyWithImpl<$Res, $Val extends Profiles>
   $Res call({
     Object? id = null,
     Object? name = freezed,
-    Object? avatarId = freezed,
+    Object? avatarName = freezed,
     Object? comment = freezed,
   }) {
     return _then(_value.copyWith(
@@ -66,9 +66,9 @@ class _$ProfilesCopyWithImpl<$Res, $Val extends Profiles>
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
               as String?,
-      avatarId: freezed == avatarId
-          ? _value.avatarId
-          : avatarId // ignore: cast_nullable_to_non_nullable
+      avatarName: freezed == avatarName
+          ? _value.avatarName
+          : avatarName // ignore: cast_nullable_to_non_nullable
               as String?,
       comment: freezed == comment
           ? _value.comment
@@ -86,7 +86,7 @@ abstract class _$$ProfilesImplCopyWith<$Res>
       __$$ProfilesImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id, String? name, String? avatarId, String? comment});
+  $Res call({String id, String? name, String? avatarName, String? comment});
 }
 
 /// @nodoc
@@ -102,7 +102,7 @@ class __$$ProfilesImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? name = freezed,
-    Object? avatarId = freezed,
+    Object? avatarName = freezed,
     Object? comment = freezed,
   }) {
     return _then(_$ProfilesImpl(
@@ -114,9 +114,9 @@ class __$$ProfilesImplCopyWithImpl<$Res>
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
               as String?,
-      avatarId: freezed == avatarId
-          ? _value.avatarId
-          : avatarId // ignore: cast_nullable_to_non_nullable
+      avatarName: freezed == avatarName
+          ? _value.avatarName
+          : avatarName // ignore: cast_nullable_to_non_nullable
               as String?,
       comment: freezed == comment
           ? _value.comment
@@ -130,7 +130,7 @@ class __$$ProfilesImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$ProfilesImpl implements _Profiles {
   const _$ProfilesImpl(
-      {required this.id, this.name, this.avatarId, this.comment});
+      {required this.id, this.name, this.avatarName, this.comment});
 
   factory _$ProfilesImpl.fromJson(Map<String, dynamic> json) =>
       _$$ProfilesImplFromJson(json);
@@ -140,13 +140,13 @@ class _$ProfilesImpl implements _Profiles {
   @override
   final String? name;
   @override
-  final String? avatarId;
+  final String? avatarName;
   @override
   final String? comment;
 
   @override
   String toString() {
-    return 'Profiles(id: $id, name: $name, avatarId: $avatarId, comment: $comment)';
+    return 'Profiles(id: $id, name: $name, avatarName: $avatarName, comment: $comment)';
   }
 
   @override
@@ -156,14 +156,14 @@ class _$ProfilesImpl implements _Profiles {
             other is _$ProfilesImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
-            (identical(other.avatarId, avatarId) ||
-                other.avatarId == avatarId) &&
+            (identical(other.avatarName, avatarName) ||
+                other.avatarName == avatarName) &&
             (identical(other.comment, comment) || other.comment == comment));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, avatarId, comment);
+  int get hashCode => Object.hash(runtimeType, id, name, avatarName, comment);
 
   @JsonKey(ignore: true)
   @override
@@ -183,7 +183,7 @@ abstract class _Profiles implements Profiles {
   const factory _Profiles(
       {required final String id,
       final String? name,
-      final String? avatarId,
+      final String? avatarName,
       final String? comment}) = _$ProfilesImpl;
 
   factory _Profiles.fromJson(Map<String, dynamic> json) =
@@ -194,7 +194,7 @@ abstract class _Profiles implements Profiles {
   @override
   String? get name;
   @override
-  String? get avatarId;
+  String? get avatarName;
   @override
   String? get comment;
   @override

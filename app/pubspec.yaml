@@ -9,6 +9,7 @@ environment:
 dependencies:
   dio: ^5.5.0+1
   envied: ^0.5.4+1
+  file_picker: ^8.0.6
   flutter:
     sdk: flutter
   flutter_hooks: ^0.20.5
@@ -25,6 +26,7 @@ dependencies:
   ticket_database:
     path: ../packages/ticket_database
   url_launcher: ^6.3.0
+  uuid: ^4.4.0
 
 dev_dependencies:
   build_runner: ^2.4.11

@@ -50,7 +50,6 @@ class LoginPage extends ConsumerWidget {
                           ? null
                           : 'net.yumnumm.ticketApp://login-callback/',
                       authScreenLaunchMode: LaunchMode.externalApplication,
-                      
                     );
                     log('response: $response');
                     ref.read(routerProvider).refresh();

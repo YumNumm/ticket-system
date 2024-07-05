@@ -16,18 +16,18 @@ _$ProfilesImpl _$$ProfilesImplFromJson(Map<String, dynamic> json) =>
         final val = _$ProfilesImpl(
           id: $checkedConvert('id', (v) => v as String),
           name: $checkedConvert('name', (v) => v as String?),
-          avatarId: $checkedConvert('avatar_id', (v) => v as String?),
+          avatarName: $checkedConvert('avatar_name', (v) => v as String?),
           comment: $checkedConvert('comment', (v) => v as String?),
         );
         return val;
       },
-      fieldKeyMap: const {'avatarId': 'avatar_id'},
+      fieldKeyMap: const {'avatarName': 'avatar_name'},
     );
 
 Map<String, dynamic> _$$ProfilesImplToJson(_$ProfilesImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
-      'avatar_id': instance.avatarId,
+      'avatar_name': instance.avatarName,
       'comment': instance.comment,
     };

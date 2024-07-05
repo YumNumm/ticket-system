@@ -8,7 +8,7 @@ class Profiles with _$Profiles {
   const factory Profiles({
     required String id,
     String? name,
-    String? avatarId,
+    String? avatarName,
     String? comment,
   }) = _Profiles;
 

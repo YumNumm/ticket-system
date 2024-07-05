@@ -11,11 +11,20 @@ class App extends ConsumerWidget {
     return MaterialApp.router(
       theme: ThemeData.light(
         useMaterial3: true,
+      ).copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blueAccent,
+        ),
       ),
-      title: "Ticket System",
       darkTheme: ThemeData.dark(
         useMaterial3: true,
+      ).copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blueAccent,
+          brightness: Brightness.dark,
+        ),
       ),
+      title: 'Ticket System',
       routerConfig: router,
     );
   }
