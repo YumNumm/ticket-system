@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ticket_app/feature/auth/data/supabase_auth.dart';
 import 'package:ticket_app/feature/profile/data/profile_repository.dart';
-import 'package:ticket_database/models/profiles.dart';
+import 'package:ticket_database_types/models/profiles.dart';
 
 part 'profile_notifier.g.dart';
 

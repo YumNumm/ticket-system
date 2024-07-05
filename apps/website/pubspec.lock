@@ -1047,10 +1047,10 @@ packages:
       relative: true
     source: path
     version: "0.0.0"
-  ticket_database:
+  ticket_database_types:
     dependency: "direct main"
     description:
-      path: "../../packages/ticket_database"
+      path: "../../packages/ticket_database_types"
       relative: true
     source: path
     version: "0.0.0"

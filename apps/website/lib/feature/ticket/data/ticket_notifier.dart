@@ -1,7 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:ticket_app/feature/auth/data/supabase_auth.dart';
 import 'package:ticket_app/feature/ticket/data/ticket_repository.dart';
-import 'package:ticket_database/models/purchases.dart';
+import 'package:ticket_database_types/models/purchases.dart';
 
 part 'ticket_notifier.g.dart';
 

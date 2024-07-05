@@ -18,7 +18,7 @@ dependencies:
   supabase_flutter: ^2.5.7
   ticket_api:
     path: ../../packages/ticket_api
-  ticket_database:
+  ticket_database_types:
     path: ../../packages/ticket_database
   url_launcher: ^6.3.0
 

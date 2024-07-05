@@ -7,7 +7,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:ticket_app/core/components/adaptive_sized_box.dart';
 import 'package:ticket_app/core/router/router.dart';
 import 'package:ticket_app/feature/profile/data/profile_notifier.dart';
-import 'package:ticket_database/models/profiles.dart';
+import 'package:ticket_database_types/models/profiles.dart';
 
 class EditProfileRoute extends GoRouteData {
   const EditProfileRoute();

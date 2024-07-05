@@ -13,8 +13,8 @@ import 'package:ticket_app/feature/profile/data/profile_notifier.dart';
 import 'package:ticket_app/feature/profile/ui/edit_profile_page.dart';
 import 'package:ticket_app/feature/purchase/ui/component/buy_ticket_card.dart';
 import 'package:ticket_app/feature/ticket/data/ticket_notifier.dart';
-import 'package:ticket_database/models/profiles.dart';
-import 'package:ticket_database/models/purchases.dart';
+import 'package:ticket_database_types/models/profiles.dart';
+import 'package:ticket_database_types/models/purchases.dart';
 import 'package:url_launcher/link.dart';
 
 class TicketView extends ConsumerWidget {

@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_auth_ui/supabase_auth_ui.dart';
-import 'package:ticket_database/models/profiles.dart';
+import 'package:ticket_database_types/models/profiles.dart';
 import 'package:uuid/uuid.dart';
 
 part 'profile_repository.g.dart';

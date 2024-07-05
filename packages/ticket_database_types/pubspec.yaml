@@ -1,4 +1,4 @@
-name: ticket_database
+name: ticket_database_types
 publish_to: "none"
 
 environment:

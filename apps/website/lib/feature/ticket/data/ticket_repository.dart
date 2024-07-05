@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:ticket_database/models/purchases.dart';
+import 'package:ticket_database_types/models/purchases.dart';
 
 part 'ticket_repository.g.dart';
 
