@@ -9,7 +9,7 @@ part of 'attendance_notifier.dart';
 // **************************************************************************
 
 String _$attendanceNotifierHash() =>
-    r'e24d6615a49afa48a1aeb5b1c8b84106192d3ea9';
+    r'f93513ae2645e49917671bb1016dde3524bfb16e';
 
 /// Copied from Dart SDK
 class _SystemHash {

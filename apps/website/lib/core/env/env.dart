@@ -10,7 +10,7 @@ part 'env.g.dart';
   useConstantCase: true,
 )
 abstract class Env {
-  @EnviedField()
+  @EnviedField( )
   static final String supabaseUrl = _Env.supabaseUrl;
   @EnviedField()
   static final String supabaseAnonKey = _Env.supabaseAnonKey;
