@@ -3,11 +3,8 @@ import { Bindings } from "../global";
 import { Barcode, PKPass } from "passkit-generator";
 import { Buffer } from "node:buffer";
 import icon from "../../assets/icon.png";
-import footer from "../../assets/footer.png";
 import background from "../../assets/background.png";
 import { createClient } from "@supabase/supabase-js";
-import { getUser } from "../utils/user";
-// import background2x from "../../examplePass.pass/background@2x.png";
 
 export const ticket = new Hono<{ Bindings: Bindings }>();
 
@@ -62,7 +59,7 @@ async function generatePassTicket({
 }): Promise<PKPass> {
   const pass = new PKPass({
     "icon.png": Buffer.from(icon),
-    "footer.png": Buffer.from(footer),
+    // "footer.png": Buffer.from(footer),
     "background.png": Buffer.from(background),
     //"background@2x.png": Buffer.from(background2x),
   }, {
@@ -93,7 +90,7 @@ async function generatePassTicket({
     {
       key: "header1",
       label: "開催日",
-      value: "08/31",
+      value: "1月1日",
       textAlignment: "PKTextAlignmentCenter",
     },
   );
@@ -104,12 +101,6 @@ async function generatePassTicket({
       value: `TICKET-${ticketId.toString().padStart(4, "0")}`,
       label: "チケット番号",
       textAlignment: "PKTextAlignmentLeft",
-    },
-    {
-      key: "IATA-destination",
-      value: "VCE",
-      label: "Venezia Marco Polo",
-      textAlignment: "PKTextAlignmentRight",
     },
   );
 
