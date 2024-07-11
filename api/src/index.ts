@@ -3,7 +3,8 @@ import { cors } from "hono/cors";
 import { Bindings } from "./global";
 import { HTTPException } from "hono/http-exception";
 import { verify_purchase } from "./routes/verify_purchase";
-import { ticket } from "./routes/passkit";
+import { ticket } from "./routes/ticket";
+import { sample } from "./routes/sample";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -21,6 +22,7 @@ app.get("/", (c) => {
 
 app.route("/verify_purchase", verify_purchase);
 app.route("/ticket", ticket);
+app.route("/sample", sample);
 
 app.onError((err, c) => {
   console.error(err.toString());
