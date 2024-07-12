@@ -32,7 +32,7 @@ async function generatePassTicket({
     "icon@2x.png": Buffer.from(icon),
     "logo.png": Buffer.from(icon),
     "logo@2x.png": Buffer.from(icon),
-    "background.png": Buffer.from(background),
+    "strip.png": Buffer.from(background),
   }, {
     signerCert: env.SIGNER_CERT,
     signerKey: env.SIGNER_KEY,

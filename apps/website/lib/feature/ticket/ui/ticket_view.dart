@@ -257,9 +257,6 @@ class _TicketCard extends StatelessWidget {
           data: profile.id,
           size: 160,
           backgroundColor: Colors.white,
-          dataModuleStyle: const QrDataModuleStyle(
-            color: Colors.black,
-          ),
         ),
         const SizedBox(height: 16),
         Link(
