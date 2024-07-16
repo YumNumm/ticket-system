@@ -253,10 +253,34 @@ class _TicketCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        QrImageView(
-          data: profile.id,
-          size: 160,
-          backgroundColor: Colors.white,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Column(
+              children: [
+                QrImageView(
+                  data: profile.id,
+                  size: 160,
+                  backgroundColor: Colors.white,
+                ),
+                const SizedBox(height: 8),
+                const Text('UUID QR Code'),
+              ],
+            ),
+            const SizedBox(width: 8),
+            Column(
+              children: [
+                QrImageView(
+                  data:
+                      '${Env.apiBaseUrl}/ticket/apple?ticket_id=${purchase.sessionId}&user_id=${profile.id}',
+                  size: 160,
+                  backgroundColor: Colors.white,
+                ),
+                const SizedBox(height: 8),
+                const Text('Apple Wallet QR Code'),
+              ],
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Link(
